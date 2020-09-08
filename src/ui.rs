@@ -85,12 +85,12 @@ fn get_event(buttons: &mut ButtonsState) -> Option<Event> {
 /// and exit the function with 'true'
 /// if the user validated 'message'
 /// or false if the user aborted
-pub struct Validator {
-    message: &'static str,
+pub struct Validator<'a> {
+    message: &'a str,
 }
 
-impl Validator {
-    pub fn new(message: &'static str) -> Self {
+impl<'a> Validator<'a> {
+    pub fn new(message: &'a str) -> Self {
         Validator { message }
     }
 
