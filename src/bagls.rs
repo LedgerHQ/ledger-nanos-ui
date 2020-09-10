@@ -115,12 +115,12 @@ pub enum Bagl<'a> {
 impl Bagl<'_> {
   /// Erase screen and display the bagl
   pub fn display(&self) {
-    BLANK.add();
+    BLANK.paint();
     io_seproxyhal_display(bagl_element_rs::from(*self));
   }
 
-  /// Only add to current screen (draw over)
-  pub fn add(&self) {
+  /// Only paint to current screen (draw over)
+  pub fn paint(&self) {
     io_seproxyhal_display(bagl_element_rs::from(*self));
   }
 }

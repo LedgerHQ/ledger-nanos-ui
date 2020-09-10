@@ -102,27 +102,27 @@ impl<'a> Validator<'a> {
                                     .text(self.message);
 
         Bagl::LABELLINE(cancel).display();
-        Bagl::LABELLINE(yes.bold()).add();
+        Bagl::LABELLINE(yes.bold()).paint();
 
         let mut response = true;
 
         loop {
             match get_event(&mut buttons) {
                 Some(Event::LeftButtonPress) => {
-                    UP_ARROW.add();
+                    UP_ARROW.paint();
                 }
                 Some(Event::RightButtonPress) => {
-                    DOWN_ARROW.add();
+                    DOWN_ARROW.paint();
                 }
                 Some(Event::LeftButtonRelease) => {
                     response = true;
                     Bagl::LABELLINE(cancel).display();
-                    Bagl::LABELLINE(yes.bold()).add();
+                    Bagl::LABELLINE(yes.bold()).paint();
                 } 
                 Some(Event::RightButtonRelease) => {
                     response = false;
                     Bagl::LABELLINE(cancel.bold()).display();
-                    Bagl::LABELLINE(yes).add();
+                    Bagl::LABELLINE(yes).paint();
                 }
                 Some(Event::BothButtonsPress) => {
                     let highlighted_bagl = match response {
@@ -157,19 +157,19 @@ impl<'a> Menu<'a> {
         ];
 
         Bagl::LABELLINE(lines[0].text(self.panels[1])).display();
-        Bagl::LABELLINE(lines[1].text(self.panels[0]).bold()).add();
-        UP_ARROW.add();
-        DOWN_ARROW.add();
+        Bagl::LABELLINE(lines[1].text(self.panels[0]).bold()).paint();
+        UP_ARROW.paint();
+        DOWN_ARROW.paint();
 
         let mut index = 0;
 
         loop {
             match get_event(&mut buttons) {
                 Some(Event::LeftButtonPress) => {
-                    Bagl::ICON(Icon::new(Icons::Up).pos(2, 8)).add();
+                    Bagl::ICON(Icon::new(Icons::Up).pos(2, 8)).paint();
                 }
                 Some(Event::RightButtonPress) => {
-                    Bagl::ICON(Icon::new(Icons::Down).pos(126-7-2, 8)).add();
+                    Bagl::ICON(Icon::new(Icons::Down).pos(126-7-2, 8)).paint();
                 }
                 Some(Event::BothButtonsRelease) => {
                     return index 
@@ -187,17 +187,17 @@ impl<'a> Menu<'a> {
                         _ => ()
                     }
                     BLANK.display();
-                    UP_ARROW.add();
-                    DOWN_ARROW.add();
+                    UP_ARROW.paint();
+                    DOWN_ARROW.paint();
                     let a = (index / 2) * 2;
                     for i in a..=a+1 {
                         let d = i-a;
                         match self.panels.get(i) {
                             Some(p) => {
                                 if d == index & 1 {
-                                    Bagl::LABELLINE(lines[1-d].text(p).bold()).add();
+                                    Bagl::LABELLINE(lines[1-d].text(p).bold()).paint();
                                 } else {
-                                    Bagl::LABELLINE(lines[1-d].text(p)).add();
+                                    Bagl::LABELLINE(lines[1-d].text(p)).paint();
                                 }
                             }
                             None => ()
@@ -278,10 +278,10 @@ impl<'a> MessageScroller<'a> {
             let chunk = &self.message[start..end];
             Bagl::LABELLINE(label.text(&chunk)).display();
             if page > 0 {
-                LEFT_ARROW.add();
+                LEFT_ARROW.paint();
             }
             if page + 1 < page_count {
-                RIGHT_ARROW.add();
+                RIGHT_ARROW.paint();
             }
         };
 
@@ -290,10 +290,10 @@ impl<'a> MessageScroller<'a> {
         loop {
             match get_event(&mut buttons) {
                 Some(Event::LeftButtonPress) => {
-                    Bagl::ICON(Icon::new(Icons::Left).pos(6, 12)).add();
+                    Bagl::ICON(Icon::new(Icons::Left).pos(6, 12)).paint();
                 }
                 Some(Event::RightButtonPress) => {
-                    Bagl::ICON(Icon::new(Icons::Right).pos(116, 12)).add();
+                    Bagl::ICON(Icon::new(Icons::Right).pos(116, 12)).paint();
                 }
                 Some(Event::LeftButtonRelease) => {
                     if cur_page > 0 {
@@ -333,12 +333,12 @@ impl<'a> HScroller<'a> {
         let mut cur_idx = 0;
 
         RIGHT_ARROW.display();
-        self.screens[cur_idx].add();
+        self.screens[cur_idx].paint();
 
         loop {
             match get_event(&mut buttons) {
                 Some(Event::LeftButtonPress) => {
-                    Bagl::ICON(Icon::new(Icons::Left).pos(6, 12)).add();
+                    Bagl::ICON(Icon::new(Icons::Left).pos(6, 12)).paint();
                 }
                 Some(Event::LeftButtonRelease) => {
                     if cur_idx > 0 {
@@ -347,12 +347,12 @@ impl<'a> HScroller<'a> {
 
                     RIGHT_ARROW.display();
                     if cur_idx != 0 {
-                        LEFT_ARROW.add();
+                        LEFT_ARROW.paint();
                     }
-                    self.screens[cur_idx].add();
+                    self.screens[cur_idx].paint();
                 }    
                 Some(Event::RightButtonPress) => {
-                    Bagl::ICON(Icon::new(Icons::Right).pos(116, 12)).add();
+                    Bagl::ICON(Icon::new(Icons::Right).pos(116, 12)).paint();
                 }
                 Some(Event::RightButtonRelease) => {
                     let last_item = self.screens.len() - 1;
@@ -362,9 +362,9 @@ impl<'a> HScroller<'a> {
 
                     LEFT_ARROW.display();
                     if cur_idx != last_item {
-                        RIGHT_ARROW.add();
+                        RIGHT_ARROW.paint();
                     }
-                    self.screens[cur_idx].add();
+                    self.screens[cur_idx].paint();
                 }
                 Some(Event::BothButtonsRelease) => {
                     break;
