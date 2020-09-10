@@ -262,13 +262,30 @@ impl<'a> MessageScroller<'a> {
 
     pub fn event_loop(&self) {
         let mut buttons = ButtonsState::new();
-        let mut cur_idx = 0;
         const CHAR_N: usize = 16;
- 
+        let page_count = (self.message.len()-1) / CHAR_N + 1;
+        if page_count == 0 {
+            return
+        }
         let label = LabelLine::new(); 
-        
-        Bagl::LABELLINE(label.text(&self.message[..CHAR_N])).display();
-        RIGHT_ARROW.add();
+        let mut cur_page = 0;
+
+        // A closure to draw common elements of the screen
+        // cur_page passed as parameter to prevent borrowing
+        let draw = |page: usize| {
+            let start = page * CHAR_N;
+            let end = (start + CHAR_N).min(self.message.len());
+            let chunk = &self.message[start..end];
+            Bagl::LABELLINE(label.text(&chunk)).display();
+            if page > 0 {
+                LEFT_ARROW.add();
+            }
+            if page + 1 < page_count {
+                RIGHT_ARROW.add();
+            }
+        };
+
+        draw(cur_page);
 
         loop {
             match get_event(&mut buttons) {
@@ -279,37 +296,24 @@ impl<'a> MessageScroller<'a> {
                     Bagl::ICON(Icon::new(Icons::Right).pos(116, 12)).add();
                 }
                 Some(Event::LeftButtonRelease) => {
-                    if cur_idx >= CHAR_N {
-                        cur_idx -= CHAR_N; // Otherwise block onto first panel
-                    } 
-                    
-                    RIGHT_ARROW.display();
-                    if cur_idx >= CHAR_N {
-                        LEFT_ARROW.add();
+                    if cur_page > 0 {
+                        cur_page -= 1;
                     }
-                    let upper_bound = (self.message.len() - 1).min(cur_idx + CHAR_N);
-                    Bagl::LABELLINE(label.text(&self.message[cur_idx..upper_bound])).add();
+                    // We need to draw anyway to clear button press arrow
+                    draw(cur_page);
                 }    
                 Some(Event::RightButtonRelease) => {
-                    let last_item = self.message.len() - 1 - CHAR_N;
-                    if cur_idx < last_item {
-                        cur_idx += CHAR_N; // Otherwise block onto last panel
+                    if cur_page + 1 < page_count {
+                        cur_page += 1;
                     }
-
-                    LEFT_ARROW.display();
-                    if cur_idx < last_item {
-                        RIGHT_ARROW.add();
-                    }
-                    let upper_bound = self.message.len().min(cur_idx + CHAR_N);
-                    Bagl::LABELLINE(label.text(&self.message[cur_idx..upper_bound])).add();
+                    // We need to draw anyway to clear button press arrow
+                    draw(cur_page);
                 }
-                Some(Event::BothButtonsRelease) => {
-                    break;
-                }
+                Some(Event::BothButtonsRelease) => break,
                 Some(_) | None => ()
             }
         }
-    } 
+    }
 }
 
 /// Horizontal scroller that
