@@ -80,6 +80,11 @@ fn get_event(buttons: &mut ButtonsState) -> Option<Event> {
     None
 }
 
+/// Shorthand to display a single message
+/// and wait for button action
+pub fn popup(message: &str) {
+    SingleMessage::new(&message).show_and_wait();
+}
 
 /// Display a single screen with a message,
 /// and exit the function with 'true'
