@@ -61,7 +61,7 @@ fn get_button_event(buttons: &mut ButtonsState, new: u8) -> Option<Event> {
 /// Handles communication to filter
 /// out actual events, and converts key
 /// events into presses/releases
-fn get_event(buttons: &mut ButtonsState) -> Option<Event> {
+pub fn get_event(buttons: &mut ButtonsState) -> Option<Event> {
     if !seph::is_status_sent() {
         seph::send_general_status();
     }
