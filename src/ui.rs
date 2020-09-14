@@ -156,13 +156,12 @@ impl<'a> Menu<'a> {
     pub fn show(&self) -> usize {
         let mut buttons = ButtonsState::new();
 
-        let lines = [
-            LabelLine::new().dims(128, 11).pos(0, 26), 
-            LabelLine::new().dims(128, 11).pos(0, 12)
-        ];
+        let bot = LabelLine::new().dims(128, 11).pos(0, 26); 
+        let top = LabelLine::new().dims(128, 11).pos(0, 12);
 
-        Bagl::LABELLINE(lines[0].text(self.panels[1])).display();
-        Bagl::LABELLINE(lines[1].text(self.panels[0]).bold()).paint();
+        Bagl::LABELLINE(bot.text(self.panels[1])).display();
+        Bagl::LABELLINE(top.text(self.panels[0]).bold()).paint();
+
         UP_ARROW.paint();
         DOWN_ARROW.paint();
 
@@ -171,10 +170,10 @@ impl<'a> Menu<'a> {
         loop {
             match get_event(&mut buttons) {
                 Some(Event::LeftButtonPress) => {
-                    Bagl::ICON(Icon::new(Icons::Up).pos(2, 8)).paint();
+                    UP_S_ARROW.paint();
                 }
                 Some(Event::RightButtonPress) => {
-                    Bagl::ICON(Icon::new(Icons::Down).pos(126-7-2, 8)).paint();
+                    DOWN_S_ARROW.paint();
                 }
                 Some(Event::BothButtonsRelease) => {
                     return index 
@@ -191,24 +190,24 @@ impl<'a> Menu<'a> {
                         }
                         _ => ()
                     }
-                    BLANK.display();
-                    UP_ARROW.paint();
+                    UP_ARROW.display();
                     DOWN_ARROW.paint();
                     let a = (index / 2) * 2;
-                    for i in a..=a+1 {
-                        let d = i-a;
-                        match self.panels.get(i) {
-                            Some(p) => {
-                                if d == index & 1 {
-                                    Bagl::LABELLINE(lines[1-d].text(p).bold()).paint();
-                                } else {
-                                    Bagl::LABELLINE(lines[1-d].text(p)).paint();
-                                }
-                            }
-                            None => ()
+                    let newtop = self.panels[a];
+                    let newbot = self.panels.get(a+1);
+
+                    if index & 1 == 0 {
+                        Bagl::LABELLINE(top.text(newtop).bold()).paint();
+                        if let Some(b) = newbot {
+                            Bagl::LABELLINE(bot.text(b)).paint();
+                        }
+                    } else {
+                        Bagl::LABELLINE(top.text(newtop)).paint();
+                        if let Some(b) = newbot {
+                            Bagl::LABELLINE(bot.text(b).bold()).paint();
                         }
                     }
-                } 
+               } 
                 _ => ()
             }
         }
@@ -295,10 +294,10 @@ impl<'a> MessageScroller<'a> {
         loop {
             match get_event(&mut buttons) {
                 Some(Event::LeftButtonPress) => {
-                    Bagl::ICON(Icon::new(Icons::Left).pos(6, 12)).paint();
+                    LEFT_S_ARROW.paint();
                 }
                 Some(Event::RightButtonPress) => {
-                    Bagl::ICON(Icon::new(Icons::Right).pos(116, 12)).paint();
+                    RIGHT_S_ARROW.paint();
                 }
                 Some(Event::LeftButtonRelease) => {
                     if cur_page > 0 {
@@ -343,7 +342,10 @@ impl<'a> HScroller<'a> {
         loop {
             match get_event(&mut buttons) {
                 Some(Event::LeftButtonPress) => {
-                    Bagl::ICON(Icon::new(Icons::Left).pos(6, 12)).paint();
+                    LEFT_S_ARROW.paint();
+                }
+                Some(Event::RightButtonPress) => {
+                    RIGHT_S_ARROW.paint();
                 }
                 Some(Event::LeftButtonRelease) => {
                     if cur_idx > 0 {
@@ -356,9 +358,6 @@ impl<'a> HScroller<'a> {
                     }
                     self.screens[cur_idx].paint();
                 }    
-                Some(Event::RightButtonPress) => {
-                    Bagl::ICON(Icon::new(Icons::Right).pos(116, 12)).paint();
-                }
                 Some(Event::RightButtonRelease) => {
                     let last_item = self.screens.len() - 1;
                     if cur_idx < last_item {

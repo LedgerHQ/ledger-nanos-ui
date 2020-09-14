@@ -278,6 +278,7 @@ impl<'a> From<LabelLine<'a>> for bagl_element_rs<'a> {
     }
   }
 }
+
 #[derive(Copy, Clone)]
 pub struct Rect {
   pub pos: (i16,i16),
@@ -337,5 +338,9 @@ pub const BLANK: Bagl<'static> = Bagl::RECT(Rect::new().pos(0,0).dims(128, 32).c
 
 pub const LEFT_ARROW: Bagl = Bagl::ICON(Icon::new(Icons::Left).pos(2, 12));
 pub const RIGHT_ARROW: Bagl = Bagl::ICON(Icon::new(Icons::Right).pos(120, 12));
+pub const LEFT_S_ARROW: Bagl = Bagl::ICON(Icon::new(Icons::Left).pos(6, 12));
+pub const RIGHT_S_ARROW: Bagl = Bagl::ICON(Icon::new(Icons::Right).pos(116, 12));
 pub const UP_ARROW: Bagl = Bagl::ICON(Icon::new(Icons::Up).pos(2, 12));
-pub const DOWN_ARROW: Bagl = Bagl::ICON(Icon::new(Icons::Down).pos(126-7-2, 12));
+pub const DOWN_ARROW: Bagl = Bagl::ICON(Icon::new(Icons::Down).pos(117, 12));
+pub const UP_S_ARROW: Bagl = Bagl::ICON(Icon::new(Icons::Up).pos(2, 8));
+pub const DOWN_S_ARROW: Bagl = Bagl::ICON(Icon::new(Icons::Down).pos(117, 8));
