@@ -16,34 +16,18 @@ pub enum BaglTypes {
 }
 
 #[repr(u8)]
+/// All icons available on the Ledger Nano-S
 pub enum Icons {
-  Gears = 3,
-  Clear,
-  Backspace,
-  Check,
+  Check = 6,
   Cross,
   CheckBadge,
   Left,
   Right,
   Up,
   Down,
-  MiniLedger,
-  CrossBadge,
-  Dashboard,
-  Plus,
-  Less,
-  ToggleON,
-  ToggleOFF,
-  Loading,
-  Cog,
-  Warning,
-  Download,
-  Transaction,
-  Bitcoin,
-  Ethereum,
-  Eye,
-  People,
-  Lock,
+  CrossBadge = 14,
+  TransactionBadge = 24,
+  EyeBadge = 27,
 }
 
 pub const BAGL_FONT_ALIGNMENT_CENTER: u32 = 32768;
