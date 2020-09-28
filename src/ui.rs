@@ -7,14 +7,14 @@ use crate::bagls::*;
 /// 1 -> left button, 2 -> right button
 pub struct ButtonsState {
     pub button_mask: u8,
-    pub cmd_buffer: [u8; 128]
+    pub cmd_buffer: [u8; 4]
 }
 
 impl Default for ButtonsState {
     fn default() -> Self {
         ButtonsState {
             button_mask: 0,
-            cmd_buffer: [0u8; 128]
+            cmd_buffer: [0u8; 4]
         }
     }
 }
@@ -106,8 +106,8 @@ impl<'a> Validator<'a> {
         let yes = LabelLine::new().dims(128, 11).pos(0, 12)
                                     .text(self.message);
 
-        Bagl::LABELLINE(cancel).display();
-        Bagl::LABELLINE(yes.bold()).paint();
+        cancel.display();
+        yes.bold().paint();
 
         let mut response = true;
 
@@ -121,20 +121,23 @@ impl<'a> Validator<'a> {
                 }
                 Some(Event::LeftButtonRelease) => {
                     response = true;
-                    Bagl::LABELLINE(cancel).display();
-                    Bagl::LABELLINE(yes.bold()).paint();
+                    cancel.display();
+                    yes.bold().paint();
                 } 
                 Some(Event::RightButtonRelease) => {
                     response = false;
-                    Bagl::LABELLINE(cancel.bold()).display();
-                    Bagl::LABELLINE(yes).paint();
+                    cancel.bold().display();
+                    yes.paint();
                 }
                 Some(Event::BothButtonsPress) => {
-                    let highlighted_bagl = match response {
-                        true => yes,
-                        false => cancel
+                    match response {
+                        true => {
+                            yes.bold().display();
+                        },
+                        false => {
+                            cancel.bold().display();
+                        } 
                     };
-                    Bagl::LABELLINE(highlighted_bagl.bold()).display();
                 }
                 Some(Event::BothButtonsRelease) => {
                     return response
@@ -159,8 +162,8 @@ impl<'a> Menu<'a> {
         let bot = LabelLine::new().dims(128, 11).pos(0, 26); 
         let top = LabelLine::new().dims(128, 11).pos(0, 12);
 
-        Bagl::LABELLINE(bot.text(self.panels[1])).display();
-        Bagl::LABELLINE(top.text(self.panels[0]).bold()).paint();
+        bot.text(self.panels[1]).display();
+        top.text(self.panels[0]).bold().paint();
 
         UP_ARROW.paint();
         DOWN_ARROW.paint();
@@ -197,14 +200,14 @@ impl<'a> Menu<'a> {
                     let newbot = self.panels.get(a+1);
 
                     if index & 1 == 0 {
-                        Bagl::LABELLINE(top.text(newtop).bold()).paint();
+                        top.text(newtop).bold().paint();
                         if let Some(b) = newbot {
-                            Bagl::LABELLINE(bot.text(b)).paint();
+                            bot.text(b).paint();
                         }
                     } else {
-                        Bagl::LABELLINE(top.text(newtop)).paint();
+                        top.text(newtop).paint();
                         if let Some(b) = newbot {
-                            Bagl::LABELLINE(bot.text(b).bold()).paint();
+                            bot.text(b).bold().paint();
                         }
                     }
                } 
@@ -228,7 +231,7 @@ impl<'a> SingleMessage<'a> {
     }
 
     pub fn show(&self) {
-        Bagl::LABELLINE(LabelLine::new().text(self.message)).display();
+        LabelLine::new().text(self.message).display();
     }
     /// Display the message and wait
     /// for any kind of button release 
@@ -280,7 +283,7 @@ impl<'a> MessageScroller<'a> {
             let start = page * CHAR_N;
             let end = (start + CHAR_N).min(self.message.len());
             let chunk = &self.message[start..end];
-            Bagl::LABELLINE(label.text(&chunk)).display();
+            label.text(&chunk).display();
             if page > 0 {
                 LEFT_ARROW.paint();
             }
