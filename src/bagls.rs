@@ -66,39 +66,32 @@ pub struct BaglComponent {
     pub icon_id: u8,
 }
 
-
-/// A Rust version of seph_display
-/// 'PIC()' is not used, and not necessary 
-/// as long as `const` bagls use no pointers
-/// (no text) or are const fn's
-fn io_seproxyhal_display(bagl: bagl_element_rs) {
-
-  // let bagl = pic_rs(&bagl_);
-  if seph::is_status_sent() {
-      // TODO: this does not seem like the right way to fix the problem...
-    let mut spi_buffer = [0u8; 16]; 
-    seph::seph_recv(&mut spi_buffer, 0); 
-  }
-
-  let bagl_comp = unsafe { core::slice::from_raw_parts(&bagl.component 
+impl BaglComponent {
+  pub fn paint(&self) {
+    let bagl_comp = unsafe { core::slice::from_raw_parts(self
                               as *const BaglComponent 
                               as *const u8,
                               core::mem::size_of::<BaglComponent>()) };
 
-  match bagl.text {
-    Some(txt) => {
-      let lenbytes = ((bagl_comp.len() + txt.len()) as u16).to_be_bytes();
-      seph::seph_send(&[SephTags::ScreenDisplayStatus as u8, lenbytes[0], lenbytes[1]]);
-      seph::seph_send(bagl_comp);
-      seph::seph_send(txt.as_bytes());
-    }
-    None => {
-      seph::seph_send(&[SephTags::ScreenDisplayStatus as u8, 0, bagl_comp.len() as u8]);
-      seph::seph_send(bagl_comp);
-    }
+    seph::seph_send(&[SephTags::ScreenDisplayStatus as u8, 0, bagl_comp.len() as u8]);
+    seph::seph_send(bagl_comp);
   }
 }
 
+pub trait Displayable {
+  fn wait_for_status(&self) {
+    if seph::is_status_sent() {
+      // TODO: this does not seem like the right way to fix the problem...
+      let mut spi_buffer = [0u8; 16]; 
+      seph::seph_recv(&mut spi_buffer, 0); 
+    }
+  }
+  fn paint(&self);
+  fn display(&self) {
+    BLANK.paint();
+    self.paint();
+  }
+}
 
 #[derive(Copy, Clone)]
 pub enum Bagl<'a> {
@@ -115,13 +108,20 @@ pub enum Bagl<'a> {
 impl Bagl<'_> {
   /// Erase screen and display the bagl
   pub fn display(&self) {
-    BLANK.paint();
-    io_seproxyhal_display(bagl_element_rs::from(*self));
+    match self {
+      Bagl::LABELLINE(x) => x.display(),
+      Bagl::RECT(x) => x.display(),
+      Bagl::ICON(x) => x.display(),
+    }
   }
 
   /// Only paint to current screen (draw over)
   pub fn paint(&self) {
-    io_seproxyhal_display(bagl_element_rs::from(*self));
+    match self {
+      Bagl::LABELLINE(x) => x.paint(),
+      Bagl::RECT(x) => x.paint(),
+      Bagl::ICON(x) => x.paint(),
+    }
   }
 }
 
@@ -129,20 +129,6 @@ impl Bagl<'_> {
 pub struct bagl_element_rs<'a> {
     pub component: BaglComponent,
     pub text: Option<&'a str>,
-}
-
-impl<'a> From<Bagl<'a>> for bagl_element_rs<'a> {
-  fn from(x: Bagl<'a>) -> bagl_element_rs<'a> {
-    match x {
-      // Bagl::LABEL(y) => bagl_element_rs::from(y),
-      Bagl::LABELLINE(y) => bagl_element_rs::from(y),
-      Bagl::RECT(y) => bagl_element_rs::from(y),
-      // Bagl::LINE(y) => bagl_element_rs::from(y),
-      Bagl::ICON(y) => bagl_element_rs::from(y),
-      // Bagl::CIRCLE(y) => bagl_element_rs::from(y),
-      // _ => bagl_element_rs::default()
-    }
-  }
 }
 
 #[derive(Copy, Clone)]
@@ -173,28 +159,6 @@ impl Icon {
   }
 }
 
-impl<'a> From<Icon> for bagl_element_rs<'a> {
-  fn from(icon: Icon) -> bagl_element_rs<'a> {
-    bagl_element_rs {
-      component: BaglComponent {
-        type_: BaglTypes::Icon as u8,
-        userid: 0,
-        x: icon.pos.0,
-        y: icon.pos.1,
-        width: icon.dims.0,
-        height: icon.dims.1,
-        stroke: 0,
-        radius: 0,
-        fill: 0,
-        fgcolor: 0xffffffu32,
-        bgcolor: 0,
-        font_id: 0,
-        icon_id: icon.glyph_id,
-      },
-      text: None,
-    }
-  }
-}
 
 #[derive(Copy,Clone)]
 #[repr(u8)]
@@ -256,29 +220,6 @@ impl<'a> LabelLine<'a> {
   }
 }
 
-impl<'a> From<LabelLine<'a>> for bagl_element_rs<'a> {
-  fn from(labelline: LabelLine<'a>) -> bagl_element_rs<'a> {
-    bagl_element_rs {
-      component: BaglComponent {
-        type_: BaglTypes::LabelLine as u8,
-        userid: 0,  // FIXME
-        x: labelline.pos.0,
-        y: labelline.pos.1,
-        width: labelline.dims.0,
-        height: labelline.dims.1,
-        stroke: 0,
-        radius: 0,
-        fill: 0,
-        fgcolor: 0xffffffu32,
-        bgcolor: 0,
-        font_id: labelline.font_id as u16 | BAGL_FONT_ALIGNMENT_CENTER as u16,
-        icon_id: 0,
-      },
-      text: labelline.text,
-    }
-  }
-}
-
 #[derive(Copy, Clone)]
 pub struct Rect {
   pub pos: (i16,i16),
@@ -309,38 +250,90 @@ impl Rect {
   }
 }
 
-impl<'a> From<Rect> for bagl_element_rs<'a> {
-  fn from(rect: Rect) -> bagl_element_rs<'a> {
-    bagl_element_rs {
-      component: BaglComponent {
-        type_: BaglTypes::Rectangle as u8,
-        userid: rect.userid,
-        x: rect.pos.0,
-        y: rect.pos.1,
-        width: rect.dims.0,
-        height: rect.dims.1,
-        stroke: 0,
-        radius: 0,
-        fill: rect.fill as u8,
-        fgcolor: rect.colors.0,
-        bgcolor: rect.colors.1,
-        font_id: 0,
-        icon_id: 0,
-      },
-      text: None,
-    }
+impl Displayable for Icon {
+  fn paint(&self) {
+    self.wait_for_status();
+    let baglcomp = BaglComponent {
+      type_: BaglTypes::Icon as u8,
+      userid: 0,
+      x: self.pos.0,
+      y: self.pos.1,
+      width: self.dims.0,
+      height: self.dims.1,
+      stroke: 0,
+      radius: 0,
+      fill: 0,
+      fgcolor: 0xffffffu32,
+      bgcolor: 0,
+      font_id: 0,
+      icon_id: self.glyph_id,
+    };
+    baglcomp.paint();
+  }
+}
+
+impl Displayable for Rect {
+  fn paint(&self) {
+    self.wait_for_status();
+    let baglcomp = BaglComponent {
+      type_: BaglTypes::Rectangle as u8,
+      userid: self.userid,
+      x: self.pos.0,
+      y: self.pos.1,
+      width: self.dims.0,
+      height: self.dims.1,
+      stroke: 0,
+      radius: 0,
+      fill: self.fill as u8,
+      fgcolor: self.colors.0,
+      bgcolor: self.colors.1,
+      font_id: 0,
+      icon_id: 0,
+    };
+    baglcomp.paint();
+  }
+}
+
+impl<'a> Displayable for LabelLine<'a> {
+  fn paint(&self) {
+    self.wait_for_status();
+    let baglcomp = BaglComponent {
+      type_: BaglTypes::LabelLine as u8,
+      userid: 0,  // FIXME
+      x: self.pos.0,
+      y: self.pos.1,
+      width: self.dims.0,
+      height: self.dims.1,
+      stroke: 0,
+      radius: 0,
+      fill: 0,
+      fgcolor: 0xffffffu32,
+      bgcolor: 0,
+      font_id: self.font_id as u16 | BAGL_FONT_ALIGNMENT_CENTER as u16,
+      icon_id: 0,
+    };
+
+    let bagl_comp = unsafe { core::slice::from_raw_parts(&baglcomp
+                              as *const BaglComponent 
+                              as *const u8,
+                              core::mem::size_of::<BaglComponent>()) };
+    let txt = self.text.unwrap(); 
+    let lenbytes = ((bagl_comp.len() + txt.len()) as u16).to_be_bytes();
+    seph::seph_send(&[SephTags::ScreenDisplayStatus as u8, lenbytes[0], lenbytes[1]]);
+    seph::seph_send(bagl_comp);
+    seph::seph_send(txt.as_bytes());
   }
 }
 
 
 /// Some common constant Bagls
-pub const BLANK: Bagl<'static> = Bagl::RECT(Rect::new().pos(0,0).dims(128, 32).colors(0, 0xffffff).fill(true));
+pub const BLANK: Rect = Rect::new().pos(0,0).dims(128, 32).colors(0, 0xffffff).fill(true);
 
-pub const LEFT_ARROW: Bagl = Bagl::ICON(Icon::new(Icons::Left).pos(2, 12));
-pub const RIGHT_ARROW: Bagl = Bagl::ICON(Icon::new(Icons::Right).pos(120, 12));
-pub const LEFT_S_ARROW: Bagl = Bagl::ICON(Icon::new(Icons::Left).pos(6, 12));
-pub const RIGHT_S_ARROW: Bagl = Bagl::ICON(Icon::new(Icons::Right).pos(116, 12));
-pub const UP_ARROW: Bagl = Bagl::ICON(Icon::new(Icons::Up).pos(2, 12));
-pub const DOWN_ARROW: Bagl = Bagl::ICON(Icon::new(Icons::Down).pos(117, 12));
-pub const UP_S_ARROW: Bagl = Bagl::ICON(Icon::new(Icons::Up).pos(2, 8));
-pub const DOWN_S_ARROW: Bagl = Bagl::ICON(Icon::new(Icons::Down).pos(117, 8));
+pub const LEFT_ARROW: Icon = Icon::new(Icons::Left).pos(2, 12);
+pub const RIGHT_ARROW: Icon = Icon::new(Icons::Right).pos(120, 12);
+pub const LEFT_S_ARROW: Icon = Icon::new(Icons::Left).pos(6, 12);
+pub const RIGHT_S_ARROW: Icon = Icon::new(Icons::Right).pos(116, 12);
+pub const UP_ARROW: Icon = Icon::new(Icons::Up).pos(2, 12);
+pub const DOWN_ARROW: Icon = Icon::new(Icons::Down).pos(117, 12);
+pub const UP_S_ARROW: Icon = Icon::new(Icons::Up).pos(2, 8);
+pub const DOWN_S_ARROW: Icon = Icon::new(Icons::Down).pos(117, 8);
