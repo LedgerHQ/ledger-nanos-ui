@@ -176,7 +176,7 @@ pub struct LabelLine<'a> {
 impl<'a> LabelLine<'a> {
   pub const fn new() -> Self {
     LabelLine {
-      pos: (0, 16),
+      pos: (0, 20),
       dims: (128, 8),
       font_id: Font::OpenSansRegular11px,
       text: None

@@ -147,6 +147,107 @@ impl<'a> Validator<'a> {
         }
     }
 }
+
+pub struct MessageValidator<'a> {
+    /// Strings displayed in the pages. One string per page. Can be empty.
+    message: &'a [&'a str],
+    /// Strings displayed in the confirmation page.
+    /// 0 element: only the icon is displayed, in center of the screen.
+    /// 1 element: icon and one line of text displayed.
+    /// 2 elements: icon and two lines of text displayed.
+    confirm: &'a [&'a str],
+    /// Strings displayed in the cancel page.
+    /// 0 element: only the icon is displayed, in center of the screen.
+    /// 1 element: icon and one line of text displayed.
+    /// 2 elements: icon and two lines of text displayed.
+    cancel: &'a [&'a str]
+}
+
+impl<'a> MessageValidator<'a> {
+    pub const fn new(message: &'a [&'a str], confirm: &'a [&'a str],
+        cancel: &'a [&'a str]) -> Self {
+
+        MessageValidator {
+            message: message,
+            confirm: confirm,
+            cancel: cancel
+        }
+    }
+
+    pub fn ask(&self) -> bool {
+        let page_count = &self.message.len() + 2;
+        let mut cur_page = 0;
+
+        let draw_icon_and_text = |icon: Icons, strings: &[&str]| {
+            // Draw icon on the center if there is no text.
+            let (x, y) = match strings.len() {
+                0 => (16, 12),
+                _ => (16, 12)
+            };
+            Bagl::ICON(Icon::new(icon).pos(x, y)).display();
+            match strings.len() {
+                0 => {},
+                1 => {
+                    Bagl::LABELLINE(LabelLine::new().text(&strings[0])
+                        .pos(0, 20)).paint();
+                },
+                _ => {
+                    Bagl::LABELLINE(LabelLine::new().text(&strings[0])
+                        .pos(0, 13)).paint();
+                    Bagl::LABELLINE(LabelLine::new().text(&strings[1])
+                        .pos(0, 26)).paint();
+                }
+            }
+        };
+
+        let draw = |page: usize| {
+            if page == page_count - 2 {
+                draw_icon_and_text(Icons::CheckBadge, &self.confirm);
+                RIGHT_ARROW.paint();
+            } else if page == page_count - 1 {
+                draw_icon_and_text(Icons::CrossBadge, &self.cancel);
+            } else {
+                Bagl::LABELLINE(LabelLine::new().text(&self.message[page]))
+                    .display();
+                RIGHT_ARROW.paint();
+            }
+            if page > 0 {
+                LEFT_ARROW.paint();
+            }
+        };
+
+        draw(cur_page);
+
+        let mut buttons = ButtonsState::new();
+        loop {
+            match get_event(&mut buttons) {
+                Some(Event::LeftButtonRelease) => {
+                    if cur_page > 0 {
+                        cur_page -= 1;
+                        draw(cur_page);
+                    }
+                }
+                Some(Event::RightButtonRelease) => {
+                    if cur_page < page_count - 1 {
+                        cur_page += 1;
+                        draw(cur_page);
+                    }
+                }
+                Some(Event::BothButtonsRelease) => {
+                    if cur_page == page_count - 2 {
+                        // Confirm
+                        return true;
+                    } else if cur_page == page_count - 1 {
+                        // Abort
+                        return false;
+                    }
+                }
+                _ => ()
+            }
+        }
+    }
+}
+
 pub struct Menu<'a> {
     panels: &'a[&'a str],
 }
@@ -159,7 +260,7 @@ impl<'a> Menu<'a> {
     pub fn show(&self) -> usize {
         let mut buttons = ButtonsState::new();
 
-        let bot = LabelLine::new().dims(128, 11).pos(0, 26); 
+        let bot = LabelLine::new().dims(128, 11).pos(0, 26);
         let top = LabelLine::new().dims(128, 11).pos(0, 12);
 
         bot.text(self.panels[1]).display();
