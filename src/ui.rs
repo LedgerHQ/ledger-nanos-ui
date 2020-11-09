@@ -1,79 +1,27 @@
 #![allow(dead_code)] 
 
 use nanos_sdk::*;
+use nanos_sdk::buttons::{ButtonsState, ButtonEvent, get_button_event};
 use crate::bagls::*;
 
-/// Structure keeping track of button pushes 
-/// 1 -> left button, 2 -> right button
-pub struct ButtonsState {
-    pub button_mask: u8,
-    pub cmd_buffer: [u8; 4]
-}
-
-impl Default for ButtonsState {
-    fn default() -> Self {
-        ButtonsState {
-            button_mask: 0,
-            cmd_buffer: [0u8; 4]
-        }
-    }
-}
-
-impl ButtonsState {
-    pub fn new() -> ButtonsState {
-        ButtonsState::default()
-    }
-}
-
-/// Event types needed by 
-/// an application
-pub enum Event {
-    LeftButtonPress,
-    RightButtonPress,
-    BothButtonsPress,
-    LeftButtonRelease,
-    RightButtonRelease,
-    BothButtonsRelease 
-}
-
-
-/// Distinguish between button press and button release
-fn get_button_event(buttons: &mut ButtonsState, new: u8) -> Option<Event> {
-    let old =  buttons.button_mask;
-    buttons.button_mask |= new;
-    match (old, new) {
-        (0, 1) => Some(Event::LeftButtonPress), 
-        (0, 2) => Some(Event::RightButtonPress), 
-        (_, 3) => Some(Event::BothButtonsPress), 
-        (b, 0) => {
-            buttons.button_mask = 0; // reset state on release
-            match b {
-                1 => Some(Event::LeftButtonRelease),
-                2 => Some(Event::RightButtonRelease),
-                3 => Some(Event::BothButtonsRelease),
-                _ => None
-            }
-        } 
-        _ => None
-    }
-}
 
 /// Handles communication to filter
 /// out actual events, and converts key
 /// events into presses/releases
-pub fn get_event(buttons: &mut ButtonsState) -> Option<Event> {
+pub fn get_event(buttons: &mut ButtonsState) -> Option<ButtonEvent> {
     if !seph::is_status_sent() {
         seph::send_general_status();
     }
 
+    let mut cmd_buffer = [0u8; 4];
     // TODO: Receiving an APDU while in UX will lead to .. exit ?
     while seph::is_status_sent() {
-        seph::seph_recv(&mut buttons.cmd_buffer, 0);
-        let tag = buttons.cmd_buffer[0];
+        seph::seph_recv(&mut cmd_buffer, 0);
+        let tag = cmd_buffer[0];
 
         // button push event
         if tag == 0x05 { 
-            let button_info = buttons.cmd_buffer[3]>>1;
+            let button_info = cmd_buffer[3]>>1;
             return get_button_event(buttons, button_info)
         }
     }
@@ -113,23 +61,23 @@ impl<'a> Validator<'a> {
 
         loop {
             match get_event(&mut buttons) {
-                Some(Event::LeftButtonPress) => {
+                Some(ButtonEvent::LeftButtonPress) => {
                     UP_ARROW.paint();
                 }
-                Some(Event::RightButtonPress) => {
+                Some(ButtonEvent::RightButtonPress) => {
                     DOWN_ARROW.paint();
                 }
-                Some(Event::LeftButtonRelease) => {
+                Some(ButtonEvent::LeftButtonRelease) => {
                     response = true;
                     cancel.display();
                     yes.bold().paint();
                 } 
-                Some(Event::RightButtonRelease) => {
+                Some(ButtonEvent::RightButtonRelease) => {
                     response = false;
                     cancel.bold().display();
                     yes.paint();
                 }
-                Some(Event::BothButtonsPress) => {
+                Some(ButtonEvent::BothButtonsPress) => {
                     match response {
                         true => {
                             yes.bold().display();
@@ -139,7 +87,7 @@ impl<'a> Validator<'a> {
                         } 
                     };
                 }
-                Some(Event::BothButtonsRelease) => {
+                Some(ButtonEvent::BothButtonsRelease) => {
                     return response
                 }
                 _ => ()
@@ -172,21 +120,21 @@ impl<'a> Menu<'a> {
 
         loop {
             match get_event(&mut buttons) {
-                Some(Event::LeftButtonPress) => {
+                Some(ButtonEvent::LeftButtonPress) => {
                     UP_S_ARROW.paint();
                 }
-                Some(Event::RightButtonPress) => {
+                Some(ButtonEvent::RightButtonPress) => {
                     DOWN_S_ARROW.paint();
                 }
-                Some(Event::BothButtonsRelease) => {
+                Some(ButtonEvent::BothButtonsRelease) => {
                     return index 
                 }
                 Some(x) => {
                     match x {
-                        Event::LeftButtonRelease => { 
+                        ButtonEvent::LeftButtonRelease => { 
                            index = index.saturating_sub(1);
                         },
-                        Event::RightButtonRelease => { 
+                        ButtonEvent::RightButtonRelease => { 
                             if index < self.panels.len() - 1 {
                                 index += 1;
                             }
@@ -242,9 +190,9 @@ impl<'a> SingleMessage<'a> {
 
         loop {
             match get_event(&mut buttons) {
-                Some(Event::LeftButtonRelease) | 
-                Some(Event::RightButtonRelease) | 
-                Some(Event::BothButtonsRelease) => return,
+                Some(ButtonEvent::LeftButtonRelease) | 
+                Some(ButtonEvent::RightButtonRelease) | 
+                Some(ButtonEvent::BothButtonsRelease) => return,
                 _ => ()
             }
         }
@@ -296,27 +244,27 @@ impl<'a> MessageScroller<'a> {
 
         loop {
             match get_event(&mut buttons) {
-                Some(Event::LeftButtonPress) => {
+                Some(ButtonEvent::LeftButtonPress) => {
                     LEFT_S_ARROW.paint();
                 }
-                Some(Event::RightButtonPress) => {
+                Some(ButtonEvent::RightButtonPress) => {
                     RIGHT_S_ARROW.paint();
                 }
-                Some(Event::LeftButtonRelease) => {
+                Some(ButtonEvent::LeftButtonRelease) => {
                     if cur_page > 0 {
                         cur_page -= 1;
                     }
                     // We need to draw anyway to clear button press arrow
                     draw(cur_page);
                 }    
-                Some(Event::RightButtonRelease) => {
+                Some(ButtonEvent::RightButtonRelease) => {
                     if cur_page + 1 < page_count {
                         cur_page += 1;
                     }
                     // We need to draw anyway to clear button press arrow
                     draw(cur_page);
                 }
-                Some(Event::BothButtonsRelease) => break,
+                Some(ButtonEvent::BothButtonsRelease) => break,
                 Some(_) | None => ()
             }
         }
@@ -344,13 +292,13 @@ impl<'a> HScroller<'a> {
 
         loop {
             match get_event(&mut buttons) {
-                Some(Event::LeftButtonPress) => {
+                Some(ButtonEvent::LeftButtonPress) => {
                     LEFT_S_ARROW.paint();
                 }
-                Some(Event::RightButtonPress) => {
+                Some(ButtonEvent::RightButtonPress) => {
                     RIGHT_S_ARROW.paint();
                 }
-                Some(Event::LeftButtonRelease) => {
+                Some(ButtonEvent::LeftButtonRelease) => {
                     if cur_idx > 0 {
                         cur_idx -= 1; // Otherwise block onto first panel
                     } 
@@ -361,7 +309,7 @@ impl<'a> HScroller<'a> {
                     }
                     self.screens[cur_idx].paint();
                 }    
-                Some(Event::RightButtonRelease) => {
+                Some(ButtonEvent::RightButtonRelease) => {
                     let last_item = self.screens.len() - 1;
                     if cur_idx < last_item {
                         cur_idx += 1; // Otherwise block onto last panel
@@ -373,7 +321,7 @@ impl<'a> HScroller<'a> {
                     }
                     self.screens[cur_idx].paint();
                 }
-                Some(Event::BothButtonsRelease) => {
+                Some(ButtonEvent::BothButtonsRelease) => {
                     break;
                 }
                 Some(_) | None => ()
