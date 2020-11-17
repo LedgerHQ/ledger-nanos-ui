@@ -168,19 +168,19 @@ impl<'a> MessageValidator<'a> {
         let mut buttons = ButtonsState::new();
         loop {
             match get_event(&mut buttons) {
-                Some(Event::LeftButtonRelease) => {
+                Some(ButtonEvent::LeftButtonRelease) => {
                     if cur_page > 0 {
                         cur_page -= 1;
                         draw(cur_page);
                     }
                 }
-                Some(Event::RightButtonRelease) => {
+                Some(ButtonEvent::RightButtonRelease) => {
                     if cur_page < page_count - 1 {
                         cur_page += 1;
                         draw(cur_page);
                     }
                 }
-                Some(Event::BothButtonsRelease) => {
+                Some(ButtonEvent::BothButtonsRelease) => {
                     if cur_page == page_count - 2 {
                         // Confirm
                         return true;
