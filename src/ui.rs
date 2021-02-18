@@ -113,9 +113,9 @@ impl<'a> MessageValidator<'a> {
         cancel: &'a [&'a str]) -> Self {
 
         MessageValidator {
-            message: message,
-            confirm: confirm,
-            cancel: cancel
+            message,
+            confirm,
+            cancel,
         }
     }
 
@@ -129,17 +129,17 @@ impl<'a> MessageValidator<'a> {
                 0 => (16, 12),
                 _ => (16, 12)
             };
-            Bagl::ICON(Icon::new(icon).pos(x, y)).display();
+            Bagl::Icon(Icon::new(icon).pos(x, y)).display();
             match strings.len() {
                 0 => {},
                 1 => {
-                    Bagl::LABELLINE(LabelLine::new().text(&strings[0])
+                    Bagl::LabelLine(LabelLine::new().text(&strings[0])
                         .pos(0, 20)).paint();
                 },
                 _ => {
-                    Bagl::LABELLINE(LabelLine::new().text(&strings[0])
+                    Bagl::LabelLine(LabelLine::new().text(&strings[0])
                         .pos(0, 13)).paint();
-                    Bagl::LABELLINE(LabelLine::new().text(&strings[1])
+                    Bagl::LabelLine(LabelLine::new().text(&strings[1])
                         .pos(0, 26)).paint();
                 }
             }
@@ -152,7 +152,7 @@ impl<'a> MessageValidator<'a> {
             } else if page == page_count - 1 {
                 draw_icon_and_text(Icons::CrossBadge, &self.cancel);
             } else {
-                Bagl::LABELLINE(LabelLine::new().text(&self.message[page]))
+                Bagl::LabelLine(LabelLine::new().text(&self.message[page]))
                     .display();
                 RIGHT_ARROW.paint();
             }

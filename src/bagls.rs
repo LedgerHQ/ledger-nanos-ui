@@ -81,10 +81,10 @@ pub trait Displayable {
 pub enum Bagl<'a> {
   // BUTTON(Button),
   // LABEL(Label),
-  LABELLINE(LabelLine<'a>),
-  RECT(Rect),
+  LabelLine(LabelLine<'a>),
+  Rect(Rect),
   // LINE(Line),
-  ICON(Icon),
+  Icon(Icon),
   // CIRCLE(Circle),
 }
 
@@ -93,18 +93,18 @@ impl Bagl<'_> {
   /// Erase screen and display the bagl
   pub fn display(&self) {
     match self {
-      Bagl::LABELLINE(x) => x.display(),
-      Bagl::RECT(x) => x.display(),
-      Bagl::ICON(x) => x.display(),
+      Bagl::LabelLine(x) => x.display(),
+      Bagl::Rect(x) => x.display(),
+      Bagl::Icon(x) => x.display(),
     }
   }
 
   /// Only paint to current screen (draw over)
   pub fn paint(&self) {
     match self {
-      Bagl::LABELLINE(x) => x.paint(),
-      Bagl::RECT(x) => x.paint(),
-      Bagl::ICON(x) => x.paint(),
+      Bagl::LabelLine(x) => x.paint(),
+      Bagl::Rect(x) => x.paint(),
+      Bagl::Icon(x) => x.paint(),
     }
   }
 }
