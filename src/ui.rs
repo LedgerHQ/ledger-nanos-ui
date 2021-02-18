@@ -1,5 +1,3 @@
-#![allow(dead_code)] 
-
 use nanos_sdk::*;
 use nanos_sdk::buttons::{ButtonsState, ButtonEvent, get_button_event};
 use crate::bagls::*;
