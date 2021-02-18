@@ -1,9 +1,6 @@
-#![allow(dead_code)] 
-
-use nanos_sdk::*;
-use nanos_sdk::buttons::{ButtonsState, ButtonEvent, get_button_event};
 use crate::bagls::*;
-
+use nanos_sdk::buttons::{get_button_event, ButtonEvent, ButtonsState};
+use nanos_sdk::*;
 
 /// Handles communication to filter
 /// out actual events, and converts key
@@ -19,9 +16,9 @@ pub fn get_event(buttons: &mut ButtonsState) -> Option<ButtonEvent> {
         let tag = buttons.cmd_buffer[0];
 
         // button push event
-        if tag == 0x05 { 
-            let button_info = buttons.cmd_buffer[3]>>1;
-            return get_button_event(buttons, button_info)
+        if tag == 0x05 {
+            let button_info = buttons.cmd_buffer[3] >> 1;
+            return get_button_event(buttons, button_info);
         }
     }
     None
@@ -49,9 +46,8 @@ impl<'a> Validator<'a> {
     pub fn ask(&self) -> bool {
         let mut buttons = ButtonsState::new();
 
-        let cancel = LabelLine::new().dims(128, 11).pos(0, 26).text("Cancel"); 
-        let yes = LabelLine::new().dims(128, 11).pos(0, 12)
-                                    .text(self.message);
+        let cancel = LabelLine::new().dims(128, 11).pos(0, 26).text("Cancel");
+        let yes = LabelLine::new().dims(128, 11).pos(0, 12).text(self.message);
 
         cancel.display();
         yes.bold().paint();
@@ -70,7 +66,7 @@ impl<'a> Validator<'a> {
                     response = true;
                     cancel.display();
                     yes.bold().paint();
-                } 
+                }
                 Some(ButtonEvent::RightButtonRelease) => {
                     response = false;
                     cancel.bold().display();
@@ -80,16 +76,14 @@ impl<'a> Validator<'a> {
                     match response {
                         true => {
                             yes.bold().display();
-                        },
+                        }
                         false => {
                             cancel.bold().display();
-                        } 
+                        }
                     };
                 }
-                Some(ButtonEvent::BothButtonsRelease) => {
-                    return response
-                }
-                _ => ()
+                Some(ButtonEvent::BothButtonsRelease) => return response,
+                _ => (),
             }
         }
     }
@@ -107,17 +101,19 @@ pub struct MessageValidator<'a> {
     /// 0 element: only the icon is displayed, in center of the screen.
     /// 1 element: icon and one line of text displayed.
     /// 2 elements: icon and two lines of text displayed.
-    cancel: &'a [&'a str]
+    cancel: &'a [&'a str],
 }
 
 impl<'a> MessageValidator<'a> {
-    pub const fn new(message: &'a [&'a str], confirm: &'a [&'a str],
-        cancel: &'a [&'a str]) -> Self {
-
+    pub const fn new(
+        message: &'a [&'a str],
+        confirm: &'a [&'a str],
+        cancel: &'a [&'a str],
+    ) -> Self {
         MessageValidator {
-            message: message,
-            confirm: confirm,
-            cancel: cancel
+            message,
+            confirm,
+            cancel,
         }
     }
 
@@ -129,20 +125,17 @@ impl<'a> MessageValidator<'a> {
             // Draw icon on the center if there is no text.
             let (x, y) = match strings.len() {
                 0 => (16, 12),
-                _ => (16, 12)
+                _ => (16, 12),
             };
-            Bagl::ICON(Icon::new(icon).pos(x, y)).display();
+            Bagl::Icon(Icon::new(icon).pos(x, y)).display();
             match strings.len() {
-                0 => {},
+                0 => {}
                 1 => {
-                    Bagl::LABELLINE(LabelLine::new().text(&strings[0])
-                        .pos(0, 20)).paint();
-                },
+                    Bagl::LabelLine(LabelLine::new().text(&strings[0]).pos(0, 20)).paint();
+                }
                 _ => {
-                    Bagl::LABELLINE(LabelLine::new().text(&strings[0])
-                        .pos(0, 13)).paint();
-                    Bagl::LABELLINE(LabelLine::new().text(&strings[1])
-                        .pos(0, 26)).paint();
+                    Bagl::LabelLine(LabelLine::new().text(&strings[0]).pos(0, 13)).paint();
+                    Bagl::LabelLine(LabelLine::new().text(&strings[1]).pos(0, 26)).paint();
                 }
             }
         };
@@ -154,8 +147,7 @@ impl<'a> MessageValidator<'a> {
             } else if page == page_count - 1 {
                 draw_icon_and_text(Icons::CrossBadge, &self.cancel);
             } else {
-                Bagl::LABELLINE(LabelLine::new().text(&self.message[page]))
-                    .display();
+                Bagl::LabelLine(LabelLine::new().text(&self.message[page])).display();
                 RIGHT_ARROW.paint();
             }
             if page > 0 {
@@ -189,18 +181,18 @@ impl<'a> MessageValidator<'a> {
                         return false;
                     }
                 }
-                _ => ()
+                _ => (),
             }
         }
     }
 }
 
 pub struct Menu<'a> {
-    panels: &'a[&'a str],
+    panels: &'a [&'a str],
 }
 
 impl<'a> Menu<'a> {
-    pub fn new(panels: &'a[&'a str]) -> Self {
+    pub fn new(panels: &'a [&'a str]) -> Self {
         Menu { panels }
     }
 
@@ -226,26 +218,24 @@ impl<'a> Menu<'a> {
                 Some(ButtonEvent::RightButtonPress) => {
                     DOWN_S_ARROW.paint();
                 }
-                Some(ButtonEvent::BothButtonsRelease) => {
-                    return index 
-                }
+                Some(ButtonEvent::BothButtonsRelease) => return index,
                 Some(x) => {
                     match x {
-                        ButtonEvent::LeftButtonRelease => { 
-                           index = index.saturating_sub(1);
-                        },
-                        ButtonEvent::RightButtonRelease => { 
+                        ButtonEvent::LeftButtonRelease => {
+                            index = index.saturating_sub(1);
+                        }
+                        ButtonEvent::RightButtonRelease => {
                             if index < self.panels.len() - 1 {
                                 index += 1;
                             }
                         }
-                        _ => ()
+                        _ => (),
                     }
                     UP_ARROW.display();
                     DOWN_ARROW.paint();
                     let a = (index / 2) * 2;
                     let newtop = self.panels[a];
-                    let newbot = self.panels.get(a+1);
+                    let newbot = self.panels.get(a + 1);
 
                     if index & 1 == 0 {
                         top.text(newtop).bold().paint();
@@ -258,15 +248,15 @@ impl<'a> Menu<'a> {
                             bot.text(b).bold().paint();
                         }
                     }
-               } 
-                _ => ()
+                }
+                _ => (),
             }
         }
     }
 }
 
 /// A gadget that displays
-/// a short message in the 
+/// a short message in the
 /// middle of the screen and
 /// waits for a button press
 pub struct SingleMessage<'a> {
@@ -282,7 +272,7 @@ impl<'a> SingleMessage<'a> {
         LabelLine::new().text(self.message).display();
     }
     /// Display the message and wait
-    /// for any kind of button release 
+    /// for any kind of button release
     pub fn show_and_wait(&self) {
         let mut buttons = ButtonsState::new();
 
@@ -290,18 +280,16 @@ impl<'a> SingleMessage<'a> {
 
         loop {
             match get_event(&mut buttons) {
-                Some(ButtonEvent::LeftButtonRelease) | 
-                Some(ButtonEvent::RightButtonRelease) | 
-                Some(ButtonEvent::BothButtonsRelease) => return,
-                _ => ()
+                Some(ButtonEvent::LeftButtonRelease)
+                | Some(ButtonEvent::RightButtonRelease)
+                | Some(ButtonEvent::BothButtonsRelease) => return,
+                _ => (),
             }
         }
     }
 }
 
-
-
-/// A horizontal scroller that 
+/// A horizontal scroller that
 /// splits any given message
 /// over several panes in chunks
 /// of CHAR_N characters.
@@ -318,11 +306,11 @@ impl<'a> MessageScroller<'a> {
     pub fn event_loop(&self) {
         let mut buttons = ButtonsState::new();
         const CHAR_N: usize = 16;
-        let page_count = (self.message.len()-1) / CHAR_N + 1;
+        let page_count = (self.message.len() - 1) / CHAR_N + 1;
         if page_count == 0 {
-            return
+            return;
         }
-        let label = LabelLine::new(); 
+        let label = LabelLine::new();
         let mut cur_page = 0;
 
         // A closure to draw common elements of the screen
@@ -356,7 +344,7 @@ impl<'a> MessageScroller<'a> {
                     }
                     // We need to draw anyway to clear button press arrow
                     draw(cur_page);
-                }    
+                }
                 Some(ButtonEvent::RightButtonRelease) => {
                     if cur_page + 1 < page_count {
                         cur_page += 1;
@@ -365,17 +353,17 @@ impl<'a> MessageScroller<'a> {
                     draw(cur_page);
                 }
                 Some(ButtonEvent::BothButtonsRelease) => break,
-                Some(_) | None => ()
+                Some(_) | None => (),
             }
         }
     }
 }
 
 /// Horizontal scroller that
-/// displays a number of Bagls 
+/// displays a number of Bagls
 /// over the same number of panes
 pub struct HScroller<'a> {
-    screens: &'a[Bagl<'a>],
+    screens: &'a [Bagl<'a>],
 }
 
 impl<'a> HScroller<'a> {
@@ -401,14 +389,14 @@ impl<'a> HScroller<'a> {
                 Some(ButtonEvent::LeftButtonRelease) => {
                     if cur_idx > 0 {
                         cur_idx -= 1; // Otherwise block onto first panel
-                    } 
+                    }
 
                     RIGHT_ARROW.display();
                     if cur_idx != 0 {
                         LEFT_ARROW.paint();
                     }
                     self.screens[cur_idx].paint();
-                }    
+                }
                 Some(ButtonEvent::RightButtonRelease) => {
                     let last_item = self.screens.len() - 1;
                     if cur_idx < last_item {
@@ -424,8 +412,8 @@ impl<'a> HScroller<'a> {
                 Some(ButtonEvent::BothButtonsRelease) => {
                     break;
                 }
-                Some(_) | None => ()
+                Some(_) | None => (),
             }
         }
-    } 
+    }
 }
