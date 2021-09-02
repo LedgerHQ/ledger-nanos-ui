@@ -128,8 +128,8 @@ impl<'a> MessageValidator<'a> {
         let draw_icon_and_text = |icon: Icons, strings: &[&str]| {
             // Draw icon on the center if there is no text.
             let (x, y) = match strings.len() {
-                0 => (16, 12),
-                _ => (16, 12)
+                0 => (60, 12),
+                _ => (18, 12)
             };
             Bagl::ICON(Icon::new(icon).pos(x, y)).display();
             match strings.len() {
@@ -168,17 +168,23 @@ impl<'a> MessageValidator<'a> {
         let mut buttons = ButtonsState::new();
         loop {
             match get_event(&mut buttons) {
+                Some(ButtonEvent::LeftButtonPress) => {
+                    LEFT_S_ARROW.paint();
+                }
+                Some(ButtonEvent::RightButtonPress) => {
+                    RIGHT_S_ARROW.paint();
+                }
                 Some(ButtonEvent::LeftButtonRelease) => {
                     if cur_page > 0 {
                         cur_page -= 1;
-                        draw(cur_page);
                     }
+                    draw(cur_page);
                 }
                 Some(ButtonEvent::RightButtonRelease) => {
                     if cur_page < page_count - 1 {
                         cur_page += 1;
-                        draw(cur_page);
                     }
+                    draw(cur_page);
                 }
                 Some(ButtonEvent::BothButtonsRelease) => {
                     if cur_page == page_count - 2 {
@@ -188,6 +194,7 @@ impl<'a> MessageValidator<'a> {
                         // Abort
                         return false;
                     }
+                    draw(cur_page);
                 }
                 _ => ()
             }
