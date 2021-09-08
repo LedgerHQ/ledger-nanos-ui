@@ -214,7 +214,7 @@ impl<'a> Menu<'a> {
     pub fn show(&self) -> usize {
         let mut buttons = ButtonsState::new();
 
-        let bot = LabelLine::new().dims(128, 11).pos(0, 26);
+        let bot = LabelLine::new().dims(128, 11).pos(0, 28);
         let top = LabelLine::new().dims(128, 11).pos(0, 12);
 
         bot.text(self.panels[1]).display();
