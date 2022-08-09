@@ -5,4 +5,4 @@ authors = ["yhql"]
 edition = "2018"
 
 [dependencies]
-nanos_sdk = { git = "https://github.com/LedgerHQ/ledger-nanos-sdk" } 
+nanos_sdk = { git = "https://github.com/LedgerHQ/ledger-nanos-sdk", features=["lib_bagl"] } # Enabling lib_bagl on Nano S is a no-op.

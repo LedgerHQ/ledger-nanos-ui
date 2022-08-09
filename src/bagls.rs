@@ -3,6 +3,17 @@
 use nanos_sdk::seph;
 use nanos_sdk::seph::SephTags;
 
+#[cfg(not(target_family = "nanos"))]
+extern "C" {
+    fn bagl_draw(component: *const BaglComponent);
+    fn bagl_draw_with_context(
+        component: *const BaglComponent,
+        text: *const u8,
+        text_length: u16,
+        text_encoding: u8,
+    );
+}
+
 #[repr(u8)]
 pub enum BaglTypes {
   NoneType = 0,
@@ -57,13 +68,23 @@ impl BaglComponent {
                               as *const u8,
                               core::mem::size_of::<BaglComponent>()) };
 
-    seph::seph_send(&[SephTags::ScreenDisplayStatus as u8, 0, bagl_comp.len() as u8]);
-    seph::seph_send(bagl_comp);
+    #[cfg(target_family = "nanos")]
+    {
+      seph::seph_send(&[ SephTags::ScreenDisplayStatus as u8, 0, bagl_comp.len() as u8, ]);
+      seph::seph_send(bagl_comp);
+    }
+    #[cfg(not(target_family = "nanos"))]
+    {
+      unsafe {
+        bagl_draw(self as *const BaglComponent);
+      }
+    }
   }
 }
 
 pub trait Displayable {
   fn wait_for_status(&self) {
+    #[cfg(target_family = "nanos")]
     if seph::is_status_sent() {
       // TODO: this does not seem like the right way to fix the problem...
       let mut spi_buffer = [0u8; 16]; 
@@ -297,21 +318,36 @@ impl<'a> Displayable for LabelLine<'a> {
       icon_id: 0,
     };
 
-    let bagl_comp = unsafe { core::slice::from_raw_parts(&baglcomp
-                              as *const BaglComponent 
-                              as *const u8,
-                              core::mem::size_of::<BaglComponent>()) };
-    let txt = self.text.unwrap(); 
-    let lenbytes = ((bagl_comp.len() + txt.len()) as u16).to_be_bytes();
-    seph::seph_send(&[SephTags::ScreenDisplayStatus as u8, lenbytes[0], lenbytes[1]]);
-    seph::seph_send(bagl_comp);
-    seph::seph_send(txt.as_bytes());
+    #[cfg(target_family = "nanos")]
+    {
+      let bagl_comp = unsafe { core::slice::from_raw_parts(&baglcomp
+                                as *const BaglComponent
+                                as *const u8,
+                                core::mem::size_of::<BaglComponent>()) };
+      let txt = self.text.unwrap();
+      let lenbytes = ((bagl_comp.len() + txt.len()) as u16).to_be_bytes();
+      seph::seph_send(&[SephTags::ScreenDisplayStatus as u8, lenbytes[0], lenbytes[1]]);
+      seph::seph_send(bagl_comp);
+      seph::seph_send(txt.as_bytes());
+    }
+    #[cfg(not(target_family = "nanos"))]
+    {
+      unsafe {
+        bagl_draw_with_context(
+          &baglcomp as *const BaglComponent,
+          self.text.unwrap().as_bytes().as_ptr(),
+          self.text.unwrap().len() as u16,
+          0,
+        );
+      }
+    }
   }
 }
 
+pub const BAGL_HEIGHT: u16 = if cfg!(target_family="nanos") {32} else {64};
 
 /// Some common constant Bagls
-pub const BLANK: Rect = Rect::new().pos(0,0).dims(128, 32).colors(0, 0xffffff).fill(true);
+pub const BLANK: Rect = Rect::new().pos(0,0).dims(128, BAGL_HEIGHT).colors(0, 0xffffff).fill(true);
 
 pub const LEFT_ARROW: Icon = Icon::new(Icons::Left).pos(2, 12);
 pub const RIGHT_ARROW: Icon = Icon::new(Icons::Right).pos(120, 12);
