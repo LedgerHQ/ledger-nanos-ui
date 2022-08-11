@@ -2,6 +2,7 @@
 
 use nanos_sdk::seph;
 use nanos_sdk::seph::SephTags;
+use nanos_sdk::screen::sdk_screen_update;
 
 #[cfg(not(target_family = "nanos"))]
 extern "C" {
@@ -77,6 +78,7 @@ impl BaglComponent {
     {
       unsafe {
         bagl_draw(self as *const BaglComponent);
+        sdk_screen_update();
       }
     }
   }
@@ -339,6 +341,7 @@ impl<'a> Displayable for LabelLine<'a> {
           self.text.unwrap().len() as u16,
           0,
         );
+        sdk_screen_update();
       }
     }
   }
