@@ -4,7 +4,7 @@ use nanos_sdk::seph;
 use nanos_sdk::seph::SephTags;
 use nanos_sdk::screen::sdk_screen_update;
 
-#[cfg(not(target_family = "nanos"))]
+#[cfg(not(target_os = "nanos"))]
 extern "C" {
     fn bagl_draw(component: *const BaglComponent);
     fn bagl_draw_with_context(
@@ -69,12 +69,12 @@ impl BaglComponent {
                               as *const u8,
                               core::mem::size_of::<BaglComponent>()) };
 
-    #[cfg(target_family = "nanos")]
+    #[cfg(target_os = "nanos")]
     {
       seph::seph_send(&[ SephTags::ScreenDisplayStatus as u8, 0, bagl_comp.len() as u8, ]);
       seph::seph_send(bagl_comp);
     }
-    #[cfg(not(target_family = "nanos"))]
+    #[cfg(not(target_os = "nanos"))]
     {
       unsafe {
         bagl_draw(self as *const BaglComponent);
@@ -86,7 +86,7 @@ impl BaglComponent {
 
 pub trait Displayable {
   fn wait_for_status(&self) {
-    #[cfg(target_family = "nanos")]
+    #[cfg(target_os = "nanos")]
     if seph::is_status_sent() {
       // TODO: this does not seem like the right way to fix the problem...
       let mut spi_buffer = [0u8; 16]; 
@@ -320,7 +320,7 @@ impl<'a> Displayable for LabelLine<'a> {
       icon_id: 0,
     };
 
-    #[cfg(target_family = "nanos")]
+    #[cfg(target_os = "nanos")]
     {
       let bagl_comp = unsafe { core::slice::from_raw_parts(&baglcomp
                                 as *const BaglComponent
@@ -332,7 +332,7 @@ impl<'a> Displayable for LabelLine<'a> {
       seph::seph_send(bagl_comp);
       seph::seph_send(txt.as_bytes());
     }
-    #[cfg(not(target_family = "nanos"))]
+    #[cfg(not(target_os = "nanos"))]
     {
       unsafe {
         bagl_draw_with_context(
@@ -347,7 +347,7 @@ impl<'a> Displayable for LabelLine<'a> {
   }
 }
 
-pub const BAGL_HEIGHT: u16 = if cfg!(target_family="nanos") {32} else {64};
+pub const BAGL_HEIGHT: u16 = if cfg!(target_os="nanos") {32} else {64};
 
 /// Some common constant Bagls
 pub const BLANK: Rect = Rect::new().pos(0,0).dims(128, BAGL_HEIGHT).colors(0, 0xffffff).fill(true);
