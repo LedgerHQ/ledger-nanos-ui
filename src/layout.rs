@@ -20,7 +20,7 @@ pub enum Location {
     Top,
     Middle,
     Bottom,
-    Custom(usize)
+    Custom(usize),
 }
 
 impl Location {
@@ -29,7 +29,7 @@ impl Location {
             Location::Top => 0,
             Location::Middle => (crate::SCREEN_HEIGHT - height) / 2,
             Location::Bottom => crate::SCREEN_HEIGHT - height,
-            Location::Custom(y) => *y
+            Location::Custom(y) => *y,
         }
     }
 }
@@ -61,4 +61,3 @@ pub trait Draw {
     fn display(&self);
     fn erase(&self);
 }
-

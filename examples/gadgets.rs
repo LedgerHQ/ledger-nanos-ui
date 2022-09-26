@@ -7,18 +7,18 @@ fn panic(_: &PanicInfo) -> ! {
     loop {}
 }
 
-use nanos_ui::ui;
 use nanos_sdk::buttons::*;
-use nanos_ui::layout::{Location, Layout, StringPlace};
+use nanos_ui::layout::{Layout, Location, StringPlace};
+use nanos_ui::ui;
 
 fn wait_any() {
     let mut buttons = ButtonsState::new();
     loop {
         match ui::get_event(&mut buttons) {
-            Some(ButtonEvent::LeftButtonRelease) | 
-            Some(ButtonEvent::RightButtonRelease) | 
-            Some(ButtonEvent::BothButtonsRelease) => return,
-            _ => ()
+            Some(ButtonEvent::LeftButtonRelease)
+            | Some(ButtonEvent::RightButtonRelease)
+            | Some(ButtonEvent::BothButtonsRelease) => return,
+            _ => (),
         }
     }
 }
@@ -38,15 +38,27 @@ extern "C" fn sample_main() {
     wait_any();
     ui::clear_screen();
 
-    ["First Line", "Second Line", "Third Line", "Fourth"].place(Location::Middle, Layout::Centered, false);
+    ["First Line", "Second Line", "Third Line", "Fourth"].place(
+        Location::Middle,
+        Layout::Centered,
+        false,
+    );
     wait_any();
     ui::clear_screen();
 
-    ["Monero &", "Ethereum &", "Zcash &", "NanoPass"].place(Location::Top, Layout::LeftAligned, false);
+    ["Monero &", "Ethereum &", "Zcash &", "NanoPass"].place(
+        Location::Top,
+        Layout::LeftAligned,
+        false,
+    );
     wait_any();
     ui::clear_screen();
 
-    ["Monero &", "Ethereum &", "Zcash &", "NanoPass"].place(Location::Top, Layout::RightAligned, false);
+    ["Monero &", "Ethereum &", "Zcash &", "NanoPass"].place(
+        Location::Top,
+        Layout::RightAligned,
+        false,
+    );
     wait_any();
 
     let scrolled_message = "Arbitrary long text goes here, with numbers -1234567890";
@@ -76,10 +88,11 @@ extern "C" fn sample_main() {
 
     let _ = ui::Validator::new("Confirm?").ask();
     let _ = ui::MessageValidator::new(
-                            &[&"Message Review"],
-                            &[&"Confirm", &"message?"],
-                            &[&"Cancel"]
-                            ).ask();
-    
+        &[&"Message Review"],
+        &[&"Confirm", &"message?"],
+        &[&"Cancel"],
+    )
+    .ask();
+
     nanos_sdk::exit_app(0);
 }

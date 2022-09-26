@@ -9,10 +9,10 @@ impl StringPlace for &str {
 
     fn place(&self, loc: Location, layout: Layout, bold: bool) {
         let mut lbl = Label::new()
-                            .dims(128, 11)
-                            .location(loc)
-                            .layout(layout)
-                            .text(self);
+            .dims(128, 11)
+            .location(loc)
+            .layout(layout)
+            .text(self);
         if bold {
             lbl = lbl.bold();
         }
@@ -49,15 +49,12 @@ impl<'a> StringPlace for Label<'a> {
 
 impl<'a> StringPlace for [Label<'a>] {
     fn compute_width(&self, bold: bool) -> usize {
-        self.iter().fold(0, |acc, lbl| acc.max(lbl.compute_width(bold)))
+        self.iter()
+            .fold(0, |acc, lbl| acc.max(lbl.compute_width(bold)))
     }
 
     fn place(&self, loc: Location, layout: Layout, _bold: bool) {
-        let padding = if self.len() > 4 {
-            0
-        } else {
-            2
-        };
+        let padding = if self.len() > 4 { 0 } else { 2 };
         let total_height = self.iter().fold(0, |acc, _| acc + padding + 11);
         let mut cur_y = loc.get_y(total_height);
         for label in self.iter() {

@@ -13,8 +13,8 @@ pub mod string_se;
 pub mod string_mcu;
 
 pub mod bitmaps;
-pub mod layout;
 pub mod fonts;
+pub mod layout;
 
 pub mod screen_util;
 pub mod ui;
