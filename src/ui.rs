@@ -1,13 +1,13 @@
-#![allow(dead_code)] 
+#![allow(dead_code)]
 
+use nanos_sdk::buttons::{get_button_event, ButtonEvent, ButtonsState};
 use nanos_sdk::*;
-use nanos_sdk::buttons::{ButtonsState, ButtonEvent, get_button_event};
 
 #[cfg(target_os = "nanos")]
 use crate::bagls::*;
 
 use crate::layout;
-use crate::layout::{Location, Draw, StringPlace};
+use crate::layout::{Draw, Location, StringPlace};
 
 #[cfg(not(target_os = "nanos"))]
 use crate::se_bagls::*;
@@ -26,9 +26,9 @@ pub fn get_event(buttons: &mut ButtonsState) -> Option<ButtonEvent> {
         let tag = buttons.cmd_buffer[0];
 
         // button push event
-        if tag == 0x05 { 
-            let button_info = buttons.cmd_buffer[3]>>1;
-            return get_button_event(buttons, button_info)
+        if tag == 0x05 {
+            let button_info = buttons.cmd_buffer[3] >> 1;
+            return get_button_event(buttons, button_info);
         }
     }
     None
@@ -76,20 +76,17 @@ impl<'a> Validator<'a> {
         clear_screen();
         let mut buttons = ButtonsState::new();
 
-        let mut lines = [
-            Label::from_const("Cancel"),
-            Label::from(self.message)
-        ];
+        let mut lines = [Label::from_const("Cancel"), Label::from(self.message)];
 
         lines[0].bold = true;
-        
+
         let redraw = |lines_list: &[Label; 2]| {
             clear_screen();
             lines_list.place(Location::Middle, Layout::Centered, false);
 
             UP_ARROW.display();
             DOWN_ARROW.display();
-            
+
             crate::screen_util::screen_update();
         };
         redraw(&lines);
@@ -111,7 +108,7 @@ impl<'a> Validator<'a> {
                     lines[1].bold = false;
                     lines.place(Location::Middle, Layout::Centered, false);
                     redraw(&lines);
-                } 
+                }
                 Some(ButtonEvent::RightButtonRelease) => {
                     DOWN_S_ARROW.erase();
                     response = true;
@@ -123,10 +120,8 @@ impl<'a> Validator<'a> {
                     UP_ARROW.erase();
                     DOWN_ARROW.erase();
                 }
-                Some(ButtonEvent::BothButtonsRelease) => {
-                    return response
-                }
-                _ => ()
+                Some(ButtonEvent::BothButtonsRelease) => return response,
+                _ => (),
             }
         }
     }
@@ -144,19 +139,21 @@ pub struct MessageValidator<'a> {
     /// 0 element: only the icon is displayed, in center of the screen.
     /// 1 element: icon and one line of text displayed.
     /// 2 elements: icon and two lines of text displayed.
-    cancel: &'a [&'a str]
+    cancel: &'a [&'a str],
 }
 
 use crate::layout::*;
 
 impl<'a> MessageValidator<'a> {
-    pub const fn new(message: &'a [&'a str], confirm: &'a [&'a str],
-        cancel: &'a [&'a str]) -> Self {
-
+    pub const fn new(
+        message: &'a [&'a str],
+        confirm: &'a [&'a str],
+        cancel: &'a [&'a str],
+    ) -> Self {
         MessageValidator {
             message,
             confirm,
-            cancel
+            cancel,
         }
     }
 
@@ -169,11 +166,11 @@ impl<'a> MessageValidator<'a> {
             // Draw icon on the center if there is no text.
             let x = match strings.len() {
                 0 => 60,
-                _ => 18
+                _ => 18,
             };
             icon.set_x(x).display();
             match strings.len() {
-                0 => {},
+                0 => {}
                 1 => {
                     strings[0].place(Location::Middle, Layout::Centered, false);
                 }
@@ -235,18 +232,18 @@ impl<'a> MessageValidator<'a> {
                     }
                     draw(cur_page);
                 }
-                _ => ()
+                _ => (),
             }
         }
     }
 }
 
 pub struct Menu<'a> {
-    panels: &'a[&'a str],
+    panels: &'a [&'a str],
 }
 
 impl<'a> Menu<'a> {
-    pub fn new(panels: &'a[&'a str]) -> Self {
+    pub fn new(panels: &'a [&'a str]) -> Self {
         Menu { panels }
     }
 
@@ -254,7 +251,8 @@ impl<'a> Menu<'a> {
         clear_screen();
         let mut buttons = ButtonsState::new();
 
-        let mut items: [Label; layout::MAX_LINES] = core::array::from_fn(|i| Label::from(*self.panels.get(i).unwrap_or(&"")));
+        let mut items: [Label; layout::MAX_LINES] =
+            core::array::from_fn(|i| Label::from(*self.panels.get(i).unwrap_or(&"")));
 
         items[0].bold = true;
         items.place(Location::Middle, Layout::Centered, false);
@@ -270,25 +268,22 @@ impl<'a> Menu<'a> {
             match get_event(&mut buttons) {
                 Some(ButtonEvent::LeftButtonPress) => {
                     UP_S_ARROW.instant_display();
-
                 }
                 Some(ButtonEvent::RightButtonPress) => {
                     DOWN_S_ARROW.instant_display();
                 }
-                Some(ButtonEvent::BothButtonsRelease) => {
-                    return index 
-                }
+                Some(ButtonEvent::BothButtonsRelease) => return index,
                 Some(x) => {
                     match x {
-                        ButtonEvent::LeftButtonRelease => { 
+                        ButtonEvent::LeftButtonRelease => {
                             index = index.saturating_sub(1);
-                        },
-                        ButtonEvent::RightButtonRelease => { 
+                        }
+                        ButtonEvent::RightButtonRelease => {
                             if index < self.panels.len() - 1 {
                                 index += 1;
                             }
                         }
-                        _ => ()
+                        _ => (),
                     }
                     clear_screen();
                     UP_ARROW.display();
@@ -302,15 +297,15 @@ impl<'a> Menu<'a> {
                     items[index - chunk].bold = true;
                     items.place(Location::Middle, Layout::Centered, false);
                     crate::screen_util::screen_update();
-               } 
-                _ => ()
+                }
+                _ => (),
             }
         }
     }
 }
 
 /// A gadget that displays
-/// a short message in the 
+/// a short message in the
 /// middle of the screen and
 /// waits for a button press
 pub struct SingleMessage<'a> {
@@ -324,10 +319,11 @@ impl<'a> SingleMessage<'a> {
 
     pub fn show(&self) {
         clear_screen();
-        self.message.place(Location::Middle, Layout::Centered, false);
+        self.message
+            .place(Location::Middle, Layout::Centered, false);
     }
     /// Display the message and wait
-    /// for any kind of button release 
+    /// for any kind of button release
     pub fn show_and_wait(&self) {
         let mut buttons = ButtonsState::new();
 
@@ -335,18 +331,16 @@ impl<'a> SingleMessage<'a> {
 
         loop {
             match get_event(&mut buttons) {
-                Some(ButtonEvent::LeftButtonRelease) | 
-                Some(ButtonEvent::RightButtonRelease) | 
-                Some(ButtonEvent::BothButtonsRelease) => return,
-                _ => ()
+                Some(ButtonEvent::LeftButtonRelease)
+                | Some(ButtonEvent::RightButtonRelease)
+                | Some(ButtonEvent::BothButtonsRelease) => return,
+                _ => (),
             }
         }
     }
 }
 
-
-
-/// A horizontal scroller that 
+/// A horizontal scroller that
 /// splits any given message
 /// over several panes in chunks
 /// of CHAR_N characters.
@@ -364,9 +358,9 @@ impl<'a> MessageScroller<'a> {
         clear_screen();
         let mut buttons = ButtonsState::new();
         const CHAR_N: usize = 16;
-        let page_count = (self.message.len()-1) / CHAR_N + 1;
+        let page_count = (self.message.len() - 1) / CHAR_N + 1;
         if page_count == 0 {
-            return
+            return;
         }
         let mut label = Label::from("");
         let mut cur_page = 0;
@@ -405,7 +399,7 @@ impl<'a> MessageScroller<'a> {
                     }
                     // We need to draw anyway to clear button press arrow
                     draw(cur_page);
-                }    
+                }
                 Some(ButtonEvent::RightButtonRelease) => {
                     RIGHT_S_ARROW.erase();
                     if cur_page + 1 < page_count {
@@ -415,7 +409,7 @@ impl<'a> MessageScroller<'a> {
                     draw(cur_page);
                 }
                 Some(ButtonEvent::BothButtonsRelease) => break,
-                Some(_) | None => ()
+                Some(_) | None => (),
             }
         }
     }

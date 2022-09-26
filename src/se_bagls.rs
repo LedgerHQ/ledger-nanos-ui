@@ -1,6 +1,6 @@
 use crate::bitmaps::Glyph;
+use crate::fonts::OPEN_SANS;
 use crate::layout::*;
-use crate::fonts::{OPEN_SANS};
 
 const fn middle_y(glyph: &Glyph) -> i16 {
     ((crate::SCREEN_HEIGHT as u32 - glyph.height) / 2) as i16
@@ -10,7 +10,7 @@ pub struct Label<'a> {
     pub text: &'a str,
     pub bold: bool,
     pub loc: Location,
-    layout: Layout
+    layout: Layout,
 }
 
 impl<'a> From<&'a str> for Label<'a> {
@@ -19,7 +19,7 @@ impl<'a> From<&'a str> for Label<'a> {
             text: s,
             bold: false,
             loc: Location::Middle,
-            layout: Layout::Centered
+            layout: Layout::Centered,
         }
     }
 }
@@ -30,27 +30,24 @@ impl<'a> Label<'a> {
             text: s,
             bold: false,
             loc: Location::Middle,
-            layout: Layout::Centered
+            layout: Layout::Centered,
         }
     }
 
     pub const fn location(self, loc: Location) -> Label<'a> {
-        Label {
-            loc,
-            ..self 
-        }
+        Label { loc, ..self }
     }
 
     pub const fn layout(self, layout: Layout) -> Label<'a> {
-        Label { layout, ..self}
+        Label { layout, ..self }
     }
 
     pub const fn bold(&self) -> Label<'a> {
         Label {
             bold: true,
-            ..*self 
+            ..*self
         }
-    }       
+    }
 }
 
 impl Draw for Label<'_> {
@@ -59,40 +56,39 @@ impl Draw for Label<'_> {
     }
     fn erase(&self) {
         let total_width = self.text.compute_width(self.bold);
-        let c_height = 
-            OPEN_SANS[self.bold as usize].height as usize;
+        let c_height = OPEN_SANS[self.bold as usize].height as usize;
         let x = self.layout.get_x(total_width);
         let y = self.loc.get_y(c_height);
         pic_draw(
             x as i32,
             y as i32,
-            total_width as u32, 
+            total_width as u32,
             c_height as u32,
             false,
-            &crate::bitmaps::BLANK
+            &crate::bitmaps::BLANK,
         )
     }
-} 
+}
 
 pub struct Icon<'a> {
     icon: &'a Glyph<'a>,
-    pos: (i16, i16)
+    pos: (i16, i16),
 }
 
 impl<'a> From<&'a Glyph<'a>> for Icon<'a> {
     fn from(glyph: &'a Glyph) -> Icon<'a> {
-        Icon { 
+        Icon {
             icon: glyph,
-            pos: (0, middle_y(glyph))
+            pos: (0, middle_y(glyph)),
         }
     }
 }
 
 impl<'a> Icon<'a> {
     const fn from(glyph: &'a Glyph<'a>) -> Icon<'a> {
-        Icon { 
+        Icon {
             icon: glyph,
-            pos: (0, middle_y(glyph))
+            pos: (0, middle_y(glyph)),
         }
     }
 
@@ -108,15 +104,15 @@ impl<'a> Icon<'a> {
     pub const fn shift_h(self, n: i16) -> Icon<'a> {
         Icon {
             pos: (self.pos.0 + n, self.pos.1),
-            ..self 
+            ..self
         }
     }
 
-    /// Shift vertically 
+    /// Shift vertically
     pub const fn shift_v(self, n: i16) -> Icon<'a> {
         Icon {
             pos: (self.pos.0, self.pos.1 + n),
-            ..self 
+            ..self
         }
     }
 }
@@ -137,14 +133,7 @@ extern "C" {
 use core::ffi::c_void;
 
 #[inline(never)]
-fn pic_draw(
-    x: i32,
-    y: i32,
-    width: u32,
-    height: u32,
-    inverted: bool,
-    bitmap: &[u8],
-) {
+fn pic_draw(x: i32, y: i32, width: u32, height: u32, inverted: bool, bitmap: &[u8]) {
     let inverted = [inverted as u32, !inverted as u32];
     unsafe {
         let pic_bmp = nanos_sdk::bindings::pic(bitmap.as_ptr() as *mut c_void);
@@ -171,7 +160,7 @@ impl<'a> Draw for Icon<'a> {
             icon.width,
             icon.height,
             icon.inverted,
-            icon.bitmap
+            icon.bitmap,
         );
     }
 
@@ -183,7 +172,7 @@ impl<'a> Draw for Icon<'a> {
             icon.width,
             icon.height,
             icon.inverted,
-            &crate::bitmaps::BLANK
+            &crate::bitmaps::BLANK,
         );
     }
 }
@@ -193,9 +182,11 @@ use crate::bitmaps;
 pub const OUTER_PADDING: usize = 2;
 pub const SCREENW: i16 = (crate::SCREEN_WIDTH - OUTER_PADDING) as i16;
 
-pub const DOWN_ARROW: Icon = Icon::from(&bitmaps::DOWN_ARROW).set_x(SCREENW - bitmaps::DOWN_ARROW.width as i16);
+pub const DOWN_ARROW: Icon =
+    Icon::from(&bitmaps::DOWN_ARROW).set_x(SCREENW - bitmaps::DOWN_ARROW.width as i16);
 pub const LEFT_ARROW: Icon = Icon::from(&bitmaps::LEFT_ARROW).set_x(OUTER_PADDING as i16);
-pub const RIGHT_ARROW: Icon = Icon::from(&bitmaps::RIGHT_ARROW).set_x(SCREENW - bitmaps::RIGHT_ARROW.width as i16);
+pub const RIGHT_ARROW: Icon =
+    Icon::from(&bitmaps::RIGHT_ARROW).set_x(SCREENW - bitmaps::RIGHT_ARROW.width as i16);
 pub const UP_ARROW: Icon = Icon::from(&bitmaps::UP_ARROW).set_x(OUTER_PADDING as i16);
 pub const DOWN_S_ARROW: Icon = DOWN_ARROW.shift_v(4);
 pub const LEFT_S_ARROW: Icon = LEFT_ARROW.shift_h(4);
