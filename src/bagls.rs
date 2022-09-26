@@ -1,7 +1,7 @@
-#![allow(dead_code)] 
 
 use nanos_sdk::seph;
 use nanos_sdk::seph::SephTags;
+use crate::layout::{Draw, Location, Layout};
 
 #[repr(u8)]
 pub enum BaglTypes {
@@ -33,7 +33,6 @@ pub enum Icons {
 pub const BAGL_FONT_ALIGNMENT_CENTER: u32 = 32768;
 
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct BaglComponent {
     pub type_: u8,
     pub userid: u8,
@@ -62,7 +61,7 @@ impl BaglComponent {
   }
 }
 
-pub trait Displayable {
+pub trait SendToDisplay {
   fn wait_for_status(&self) {
     if seph::is_status_sent() {
       // TODO: this does not seem like the right way to fix the problem...
@@ -71,21 +70,16 @@ pub trait Displayable {
     }
   }
   fn paint(&self);
-  fn display(&self) {
+  fn send_to_display(&self) {
     BLANK.paint();
     self.paint();
   }
 }
 
-#[derive(Copy, Clone)]
 pub enum Bagl<'a> {
-  // BUTTON(Button),
-  // LABEL(Label),
-  LABELLINE(LabelLine<'a>),
+  LABELLINE(Label<'a>),
   RECT(Rect),
-  // LINE(Line),
   ICON(Icon),
-  // CIRCLE(Circle),
 }
 
 
@@ -93,9 +87,9 @@ impl Bagl<'_> {
   /// Erase screen and display the bagl
   pub fn display(&self) {
     match self {
-      Bagl::LABELLINE(x) => x.display(),
-      Bagl::RECT(x) => x.display(),
-      Bagl::ICON(x) => x.display(),
+      Bagl::LABELLINE(x) => x.send_to_display(),
+      Bagl::RECT(x) => x.send_to_display(),
+      Bagl::ICON(x) => x.send_to_display(),
     }
   }
 
@@ -115,7 +109,6 @@ pub struct bagl_element_rs<'a> {
     pub text: Option<&'a str>,
 }
 
-#[derive(Copy, Clone)]
 pub struct Icon {
   pub pos: (i16, i16),
   pub dims: (u16, u16),
@@ -138,13 +131,29 @@ impl Icon {
     Icon {pos: (x,y), ..self}
   }
 
+  pub const fn set_x(self, x: i16) -> Self {
+    Icon {pos: (x,self.pos.1), ..self}
+  }
+
   pub const fn dims(self, w: u16, h: u16) -> Self {
     Icon {dims: (w,h), ..self}
   }
 }
 
+impl Draw for Icon {
+  fn display(&self) {
+    self.paint();
+  }
+  fn erase(&self) {
+    Rect::new()
+          .pos(self.pos.0, self.pos.1)
+          .dims(self.dims.0, self.dims.1)
+          .colors(0, 0xffffff)
+          .fill(true)
+          .paint();
+  }
+}
 
-#[derive(Copy,Clone)]
 #[repr(u8)]
 pub enum Font {
   LucidaConsole8px = 0,
@@ -165,46 +174,74 @@ pub enum Font {
   Symbols1,
 }
 
-#[derive(Copy, Clone)]
-pub struct LabelLine<'a> {
-  pub pos: (i16, i16),
+pub struct Label<'a> {
+  pub loc: Location,
+  pub layout: Layout,
   pub dims: (u16, u16),
-  pub font_id: Font,
-  pub text: Option<&'a str>
+  pub bold: bool,
+  pub text: &'a str
 }
 
-impl<'a> LabelLine<'a> {
+impl<'a> Label<'a> {
   pub const fn new() -> Self {
-    LabelLine {
-      pos: (0, 20),
-      dims: (128, 8),
-      font_id: Font::OpenSansRegular11px,
-      text: None
+    Label {
+      loc: Location::Middle, 
+      layout: Layout::Centered,
+      dims: (128, 11),
+      bold: false,
+      text: ""
     }
   }
 
-  pub const fn pos(self, x: i16, y: i16) -> Self {
-    LabelLine {pos: (x,y), ..self}
+  pub const fn from_const(text: &'static str) -> Self {
+    Label {
+      loc: Location::Middle,
+      layout: Layout::Centered,
+      dims: (128, 11),
+      bold: false,
+      text 
+    }
+  }
+
+  pub const fn location(self, loc: Location) -> Self {
+    Label {loc, ..self}
+  }
+  pub const fn layout(self, layout: Layout) -> Self {
+    Label {layout, ..self}
   }
   pub const fn dims(self, w: u16, h: u16) -> Self {
-    LabelLine {dims: (w,h), ..self}
+    Label {dims: (w,h), ..self}
   }
   pub const fn bold(self) -> Self {
-    LabelLine {font_id: Font::OpenSansExtrabold11px, ..self } 
+    Label {bold: true, ..self } 
   }
-  /// TODO:This one won't display
-  // pub const fn light(self) -> Self {
-  //   LabelLine {font_id: Font::OpenSansLight16px, ..self } 
-  // }
-  pub const fn font(self, font_id: Font) -> Self {
-    LabelLine {font_id, ..self}
-  }
-  pub fn text(self, m: &'a str) -> Self {
-    LabelLine {text: Some(m), ..self}
+  pub fn text(self, text: &'a str) -> Self {
+    Label {text, ..self}
   }
 }
 
-#[derive(Copy, Clone)]
+impl<'a> From<&'a str> for Label<'a> {
+  fn from(text: &'a str) -> Label<'a> {
+    Label::new().text(text)
+  }
+}
+
+impl<'a> Draw for Label<'a> {
+  fn display(&self) {
+    self.paint();
+  }
+  fn erase(&self) {
+    let x = self.layout.get_x(self.dims.0 as usize) as i16;
+    let y = self.loc.get_y(self.dims.1 as usize) as i16;
+    Rect::new()
+          .pos(x, y)
+          .dims(self.dims.0, self.dims.1)
+          .colors(0, 0xffffff)
+          .fill(true)
+          .paint();
+  }
+}
+
 pub struct Rect {
   pub pos: (i16,i16),
   pub dims: (u16,u16),
@@ -234,7 +271,21 @@ impl Rect {
   }
 }
 
-impl Displayable for Icon {
+impl Draw for Rect {
+  fn display(&self) {
+    self.paint();
+  }
+  fn erase(&self) {
+    Rect::new()
+          .pos(self.pos.0, self.pos.1)
+          .dims(self.dims.0, self.dims.1)
+          .colors(0, 0xffffff)
+          .fill(true)
+          .paint();
+  }
+}
+
+impl SendToDisplay for Icon {
   fn paint(&self) {
     self.wait_for_status();
     let baglcomp = BaglComponent {
@@ -256,7 +307,7 @@ impl Displayable for Icon {
   }
 }
 
-impl Displayable for Rect {
+impl SendToDisplay for Rect {
   fn paint(&self) {
     self.wait_for_status();
     let baglcomp = BaglComponent {
@@ -278,22 +329,38 @@ impl Displayable for Rect {
   }
 }
 
-impl<'a> Displayable for LabelLine<'a> {
+use core::ffi::c_void;
+
+impl<'a> SendToDisplay for Label<'a> {
   fn paint(&self) {
     self.wait_for_status();
+    let font_id = if self.bold {
+      Font::OpenSansExtrabold11px
+    } else {
+      Font::OpenSansRegular11px
+    };
+    let x = match self.layout {
+      Layout::RightAligned => self.layout.get_x(self.text.len() * 7),
+      _ => 0
+    };
+    let y = self.loc.get_y(self.dims.1 as usize) as i16;
+    let width = match self.layout {
+      Layout::Centered => crate::SCREEN_WIDTH,
+      _ => self.text.len() * 6,
+    };
     let baglcomp = BaglComponent {
       type_: BaglTypes::LabelLine as u8,
       userid: 0,  // FIXME
-      x: self.pos.0,
-      y: self.pos.1,
-      width: self.dims.0,
+      x: x as i16,
+      y: y - 1 + self.dims.1 as i16,
+      width: width as u16, //self.dims.0,
       height: self.dims.1,
       stroke: 0,
       radius: 0,
       fill: 0,
       fgcolor: 0xffffffu32,
       bgcolor: 0,
-      font_id: self.font_id as u16 | BAGL_FONT_ALIGNMENT_CENTER as u16,
+      font_id: font_id as u16 | BAGL_FONT_ALIGNMENT_CENTER as u16,
       icon_id: 0,
     };
 
@@ -301,11 +368,15 @@ impl<'a> Displayable for LabelLine<'a> {
                               as *const BaglComponent 
                               as *const u8,
                               core::mem::size_of::<BaglComponent>()) };
-    let txt = self.text.unwrap(); 
-    let lenbytes = ((bagl_comp.len() + txt.len()) as u16).to_be_bytes();
+    let lenbytes = ((bagl_comp.len() + self.text.len()) as u16).to_be_bytes();
     seph::seph_send(&[SephTags::ScreenDisplayStatus as u8, lenbytes[0], lenbytes[1]]);
     seph::seph_send(bagl_comp);
-    seph::seph_send(txt.as_bytes());
+
+
+    unsafe {
+      let pic_text = nanos_sdk::bindings::pic(self.text.as_ptr() as *mut u8 as *mut c_void);
+      nanos_sdk::bindings::io_seph_send(pic_text as *mut u8, self.text.len() as u16);
+    }
   }
 }
 
@@ -313,11 +384,14 @@ impl<'a> Displayable for LabelLine<'a> {
 /// Some common constant Bagls
 pub const BLANK: Rect = Rect::new().pos(0,0).dims(128, 32).colors(0, 0xffffff).fill(true);
 
-pub const LEFT_ARROW: Icon = Icon::new(Icons::Left).pos(2, 12);
+pub const LEFT_ARROW: Icon = Icon::new(Icons::Left).pos(0, 12);
 pub const RIGHT_ARROW: Icon = Icon::new(Icons::Right).pos(120, 12);
-pub const LEFT_S_ARROW: Icon = Icon::new(Icons::Left).pos(6, 12);
+pub const LEFT_S_ARROW: Icon = Icon::new(Icons::Left).pos(4, 12);
 pub const RIGHT_S_ARROW: Icon = Icon::new(Icons::Right).pos(116, 12);
 pub const UP_ARROW: Icon = Icon::new(Icons::Up).pos(2, 12);
 pub const DOWN_ARROW: Icon = Icon::new(Icons::Down).pos(117, 12);
 pub const UP_S_ARROW: Icon = Icon::new(Icons::Up).pos(2, 8);
 pub const DOWN_S_ARROW: Icon = Icon::new(Icons::Down).pos(117, 8);
+
+pub const CHECKMARK_ICON: Icon = Icon::new(Icons::CheckBadge);
+pub const CROSS_ICON: Icon = Icon::new(Icons::CrossBadge);
