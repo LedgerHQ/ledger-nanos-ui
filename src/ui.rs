@@ -2,8 +2,15 @@
 
 use nanos_sdk::*;
 use nanos_sdk::buttons::{ButtonsState, ButtonEvent, get_button_event};
+
+#[cfg(target_os = "nanos")]
 use crate::bagls::*;
 
+use crate::layout;
+use crate::layout::{Location, Draw, StringPlace};
+
+#[cfg(not(target_os = "nanos"))]
+use crate::se_bagls::*;
 
 /// Handles communication to filter
 /// out actual events, and converts key
@@ -27,9 +34,28 @@ pub fn get_event(buttons: &mut ButtonsState) -> Option<ButtonEvent> {
     None
 }
 
+pub fn clear_screen() {
+    #[cfg(not(target_os = "nanos"))]
+    {
+        #[cfg(not(feature = "speculos"))]
+        nanos_sdk::screen::sdk_screen_clear();
+
+        #[cfg(feature = "speculos")]
+        {
+            use crate::bitmaps;
+            // Speculos does not emulate the screen_clear syscall yet
+            bitmaps::manual_screen_clear();
+        }
+    }
+
+    #[cfg(target_os = "nanos")]
+    BLANK.paint();
+}
+
 /// Shorthand to display a single message
 /// and wait for button action
 pub fn popup(message: &str) {
+    clear_screen();
     SingleMessage::new(&message).show_and_wait();
 }
 
@@ -47,44 +73,55 @@ impl<'a> Validator<'a> {
     }
 
     pub fn ask(&self) -> bool {
+        clear_screen();
         let mut buttons = ButtonsState::new();
 
-        let cancel = LabelLine::new().dims(128, 11).pos(0, 26).text("Cancel"); 
-        let yes = LabelLine::new().dims(128, 11).pos(0, 12)
-                                    .text(self.message);
+        let mut lines = [
+            Label::from_const("Cancel"),
+            Label::from(self.message)
+        ];
 
-        cancel.display();
-        yes.bold().paint();
+        lines[0].bold = true;
+        
+        let redraw = |lines_list: &[Label; 2]| {
+            clear_screen();
+            lines_list.place(Location::Middle, Layout::Centered, false);
+
+            UP_ARROW.display();
+            DOWN_ARROW.display();
+            
+            crate::screen_util::screen_update();
+        };
+        redraw(&lines);
 
         let mut response = true;
 
         loop {
             match get_event(&mut buttons) {
                 Some(ButtonEvent::LeftButtonPress) => {
-                    UP_ARROW.paint();
+                    UP_S_ARROW.instant_display();
                 }
                 Some(ButtonEvent::RightButtonPress) => {
-                    DOWN_ARROW.paint();
+                    DOWN_S_ARROW.instant_display();
                 }
                 Some(ButtonEvent::LeftButtonRelease) => {
-                    response = true;
-                    cancel.display();
-                    yes.bold().paint();
+                    UP_S_ARROW.erase();
+                    response = false;
+                    lines[0].bold = true;
+                    lines[1].bold = false;
+                    lines.place(Location::Middle, Layout::Centered, false);
+                    redraw(&lines);
                 } 
                 Some(ButtonEvent::RightButtonRelease) => {
-                    response = false;
-                    cancel.bold().display();
-                    yes.paint();
+                    DOWN_S_ARROW.erase();
+                    response = true;
+                    lines[0].bold = false;
+                    lines[1].bold = true;
+                    redraw(&lines);
                 }
                 Some(ButtonEvent::BothButtonsPress) => {
-                    match response {
-                        true => {
-                            yes.bold().display();
-                        },
-                        false => {
-                            cancel.bold().display();
-                        } 
-                    };
+                    UP_ARROW.erase();
+                    DOWN_ARROW.erase();
                 }
                 Some(ButtonEvent::BothButtonsRelease) => {
                     return response
@@ -110,57 +147,57 @@ pub struct MessageValidator<'a> {
     cancel: &'a [&'a str]
 }
 
+use crate::layout::*;
+
 impl<'a> MessageValidator<'a> {
     pub const fn new(message: &'a [&'a str], confirm: &'a [&'a str],
         cancel: &'a [&'a str]) -> Self {
 
         MessageValidator {
-            message: message,
-            confirm: confirm,
-            cancel: cancel
+            message,
+            confirm,
+            cancel
         }
     }
 
     pub fn ask(&self) -> bool {
+        clear_screen();
         let page_count = &self.message.len() + 2;
         let mut cur_page = 0;
 
-        let draw_icon_and_text = |icon: Icons, strings: &[&str]| {
+        let draw_icon_and_text = |icon: Icon, strings: &[&str]| {
             // Draw icon on the center if there is no text.
-            let (x, y) = match strings.len() {
-                0 => (60, 12),
-                _ => (18, 12)
+            let x = match strings.len() {
+                0 => 60,
+                _ => 18
             };
-            Bagl::ICON(Icon::new(icon).pos(x, y)).display();
+            icon.set_x(x).display();
             match strings.len() {
                 0 => {},
                 1 => {
-                    Bagl::LABELLINE(LabelLine::new().text(&strings[0])
-                        .pos(0, 20)).paint();
-                },
+                    strings[0].place(Location::Middle, Layout::Centered, false);
+                }
                 _ => {
-                    Bagl::LABELLINE(LabelLine::new().text(&strings[0])
-                        .pos(0, 13)).paint();
-                    Bagl::LABELLINE(LabelLine::new().text(&strings[1])
-                        .pos(0, 26)).paint();
+                    strings[..2].place(Location::Middle, Layout::Centered, false);
                 }
             }
         };
 
         let draw = |page: usize| {
+            clear_screen();
             if page == page_count - 2 {
-                draw_icon_and_text(Icons::CheckBadge, &self.confirm);
-                RIGHT_ARROW.paint();
+                draw_icon_and_text(CHECKMARK_ICON, &self.confirm);
+                RIGHT_ARROW.display();
             } else if page == page_count - 1 {
-                draw_icon_and_text(Icons::CrossBadge, &self.cancel);
+                draw_icon_and_text(CROSS_ICON, &self.cancel);
             } else {
-                Bagl::LABELLINE(LabelLine::new().text(&self.message[page]))
-                    .display();
-                RIGHT_ARROW.paint();
+                self.message[page].place(Location::Middle, Layout::Centered, false);
+                RIGHT_ARROW.display();
             }
             if page > 0 {
-                LEFT_ARROW.paint();
+                LEFT_ARROW.display();
             }
+            crate::screen_util::screen_update();
         };
 
         draw(cur_page);
@@ -169,18 +206,20 @@ impl<'a> MessageValidator<'a> {
         loop {
             match get_event(&mut buttons) {
                 Some(ButtonEvent::LeftButtonPress) => {
-                    LEFT_S_ARROW.paint();
+                    LEFT_S_ARROW.instant_display();
                 }
                 Some(ButtonEvent::RightButtonPress) => {
-                    RIGHT_S_ARROW.paint();
+                    RIGHT_S_ARROW.instant_display();
                 }
                 Some(ButtonEvent::LeftButtonRelease) => {
+                    LEFT_S_ARROW.erase();
                     if cur_page > 0 {
                         cur_page -= 1;
                     }
                     draw(cur_page);
                 }
                 Some(ButtonEvent::RightButtonRelease) => {
+                    RIGHT_S_ARROW.erase();
                     if cur_page < page_count - 1 {
                         cur_page += 1;
                     }
@@ -212,26 +251,29 @@ impl<'a> Menu<'a> {
     }
 
     pub fn show(&self) -> usize {
+        clear_screen();
         let mut buttons = ButtonsState::new();
 
-        let bot = LabelLine::new().dims(128, 11).pos(0, 28);
-        let top = LabelLine::new().dims(128, 11).pos(0, 12);
+        let mut items: [Label; layout::MAX_LINES] = core::array::from_fn(|i| Label::from(*self.panels.get(i).unwrap_or(&"")));
 
-        bot.text(self.panels[1]).display();
-        top.text(self.panels[0]).bold().paint();
+        items[0].bold = true;
+        items.place(Location::Middle, Layout::Centered, false);
 
-        UP_ARROW.paint();
-        DOWN_ARROW.paint();
+        UP_ARROW.display();
+        DOWN_ARROW.display();
+
+        crate::screen_util::screen_update();
 
         let mut index = 0;
 
         loop {
             match get_event(&mut buttons) {
                 Some(ButtonEvent::LeftButtonPress) => {
-                    UP_S_ARROW.paint();
+                    UP_S_ARROW.instant_display();
+
                 }
                 Some(ButtonEvent::RightButtonPress) => {
-                    DOWN_S_ARROW.paint();
+                    DOWN_S_ARROW.instant_display();
                 }
                 Some(ButtonEvent::BothButtonsRelease) => {
                     return index 
@@ -239,7 +281,7 @@ impl<'a> Menu<'a> {
                 Some(x) => {
                     match x {
                         ButtonEvent::LeftButtonRelease => { 
-                           index = index.saturating_sub(1);
+                            index = index.saturating_sub(1);
                         },
                         ButtonEvent::RightButtonRelease => { 
                             if index < self.panels.len() - 1 {
@@ -248,23 +290,18 @@ impl<'a> Menu<'a> {
                         }
                         _ => ()
                     }
+                    clear_screen();
                     UP_ARROW.display();
-                    DOWN_ARROW.paint();
-                    let a = (index / 2) * 2;
-                    let newtop = self.panels[a];
-                    let newbot = self.panels.get(a+1);
+                    DOWN_ARROW.display();
 
-                    if index & 1 == 0 {
-                        top.text(newtop).bold().paint();
-                        if let Some(b) = newbot {
-                            bot.text(b).paint();
-                        }
-                    } else {
-                        top.text(newtop).paint();
-                        if let Some(b) = newbot {
-                            bot.text(b).bold().paint();
-                        }
+                    let chunk = (index / layout::MAX_LINES) * layout::MAX_LINES;
+                    for (i, item) in items.iter_mut().enumerate() {
+                        item.text = self.panels.get(chunk + i).unwrap_or(&"");
+                        item.bold = false;
                     }
+                    items[index - chunk].bold = true;
+                    items.place(Location::Middle, Layout::Centered, false);
+                    crate::screen_util::screen_update();
                } 
                 _ => ()
             }
@@ -286,7 +323,8 @@ impl<'a> SingleMessage<'a> {
     }
 
     pub fn show(&self) {
-        LabelLine::new().text(self.message).display();
+        clear_screen();
+        self.message.place(Location::Middle, Layout::Centered, false);
     }
     /// Display the message and wait
     /// for any kind of button release 
@@ -323,28 +361,31 @@ impl<'a> MessageScroller<'a> {
     }
 
     pub fn event_loop(&self) {
+        clear_screen();
         let mut buttons = ButtonsState::new();
         const CHAR_N: usize = 16;
         let page_count = (self.message.len()-1) / CHAR_N + 1;
         if page_count == 0 {
             return
         }
-        let label = LabelLine::new(); 
+        let mut label = Label::from("");
         let mut cur_page = 0;
 
         // A closure to draw common elements of the screen
         // cur_page passed as parameter to prevent borrowing
-        let draw = |page: usize| {
+        let mut draw = |page: usize| {
             let start = page * CHAR_N;
             let end = (start + CHAR_N).min(self.message.len());
             let chunk = &self.message[start..end];
-            label.text(&chunk).display();
+            label.erase();
+            label.text = &chunk;
             if page > 0 {
-                LEFT_ARROW.paint();
+                LEFT_ARROW.display();
             }
             if page + 1 < page_count {
-                RIGHT_ARROW.paint();
+                RIGHT_ARROW.display();
             }
+            label.instant_display();
         };
 
         draw(cur_page);
@@ -352,12 +393,13 @@ impl<'a> MessageScroller<'a> {
         loop {
             match get_event(&mut buttons) {
                 Some(ButtonEvent::LeftButtonPress) => {
-                    LEFT_S_ARROW.paint();
+                    LEFT_S_ARROW.instant_display();
                 }
                 Some(ButtonEvent::RightButtonPress) => {
-                    RIGHT_S_ARROW.paint();
+                    RIGHT_S_ARROW.instant_display();
                 }
                 Some(ButtonEvent::LeftButtonRelease) => {
+                    LEFT_S_ARROW.erase();
                     if cur_page > 0 {
                         cur_page -= 1;
                     }
@@ -365,6 +407,7 @@ impl<'a> MessageScroller<'a> {
                     draw(cur_page);
                 }    
                 Some(ButtonEvent::RightButtonRelease) => {
+                    RIGHT_S_ARROW.erase();
                     if cur_page + 1 < page_count {
                         cur_page += 1;
                     }
@@ -376,63 +419,4 @@ impl<'a> MessageScroller<'a> {
             }
         }
     }
-}
-
-/// Horizontal scroller that
-/// displays a number of Bagls 
-/// over the same number of panes
-pub struct HScroller<'a> {
-    screens: &'a[Bagl<'a>],
-}
-
-impl<'a> HScroller<'a> {
-    pub fn new(screens: &'a [Bagl<'a>]) -> Self {
-        HScroller { screens }
-    }
-
-    pub fn event_loop(&self) {
-        let mut buttons = ButtonsState::new();
-        let mut cur_idx = 0;
-
-        RIGHT_ARROW.display();
-        self.screens[cur_idx].paint();
-
-        loop {
-            match get_event(&mut buttons) {
-                Some(ButtonEvent::LeftButtonPress) => {
-                    LEFT_S_ARROW.paint();
-                }
-                Some(ButtonEvent::RightButtonPress) => {
-                    RIGHT_S_ARROW.paint();
-                }
-                Some(ButtonEvent::LeftButtonRelease) => {
-                    if cur_idx > 0 {
-                        cur_idx -= 1; // Otherwise block onto first panel
-                    } 
-
-                    RIGHT_ARROW.display();
-                    if cur_idx != 0 {
-                        LEFT_ARROW.paint();
-                    }
-                    self.screens[cur_idx].paint();
-                }    
-                Some(ButtonEvent::RightButtonRelease) => {
-                    let last_item = self.screens.len() - 1;
-                    if cur_idx < last_item {
-                        cur_idx += 1; // Otherwise block onto last panel
-                    }
-
-                    LEFT_ARROW.display();
-                    if cur_idx != last_item {
-                        RIGHT_ARROW.paint();
-                    }
-                    self.screens[cur_idx].paint();
-                }
-                Some(ButtonEvent::BothButtonsRelease) => {
-                    break;
-                }
-                Some(_) | None => ()
-            }
-        }
-    } 
 }
