@@ -1,7 +1,7 @@
 use crate::layout::*;
 use nanos_sdk::pic_rs;
 use crate::fonts::OPEN_SANS;
-use crate::screen_util::draw;
+use crate::screen_util::{draw, screen_update};
 use core::ffi::c_void;
 
 extern "C" {
@@ -41,6 +41,7 @@ impl StringPlace for &str {
             );
             cur_x += c_width as i32;
         }
+        screen_update();
     }
 }
 
