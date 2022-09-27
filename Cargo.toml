@@ -5,7 +5,7 @@ authors = ["yhql"]
 edition = "2021"
 
 [dependencies]
-nanos_sdk = { git = "https://github.com/LedgerHQ/ledger-nanos-sdk" } 
+nanos_sdk = { version = "0.2.0" } 
 include_gif = { git = "https://github.com/LedgerHQ/sdk_include_gif" }
 
 [features]

@@ -12,11 +12,11 @@ build-std = ["core"]
 build-std-features = ["compiler-builtins-mem"]
 
 [build]
-target = "nanosplus.json"
+target = "nanosplus"
 
 [alias]
-bns = "build --example gadgets --release --features speculos --target=nanos.json"
-bnsp = "build --example gadgets --release --features speculos --target=nanosplus.json"
-rns = "run --example gadgets --release --features speculos --target=nanos.json"
-rnx = "run --example gadgets --release --features speculos --target=nanox.json"
-rnsp = "run --example gadgets --release --features speculos --target=nanosplus.json"
+bns = "build --example gadgets --release --features speculos --target=nanos"
+bnsp = "build --example gadgets --release --features speculos --target=nanosplus"
+rns = "run --example gadgets --release --features speculos --target=nanos"
+rnx = "run --example gadgets --release --features speculos --target=nanox"
+rnsp = "run --example gadgets --release --features speculos --target=nanosplus"
