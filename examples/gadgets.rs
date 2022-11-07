@@ -94,5 +94,15 @@ extern "C" fn sample_main() {
     )
     .ask();
 
+    ui::clear_screen();
+
+    use nanos_ui::bagls::RectFull as Rect;
+    use nanos_ui::layout::Draw;
+
+    Rect::new().width(10).height(10).pos(16, 16).display();
+    Rect::new().width(10).height(10).pos(32, 16).display();
+    Rect::new().width(10).height(10).pos(48, 16).display();
+
+    wait_any();
     nanos_sdk::exit_app(0);
 }

@@ -62,7 +62,7 @@ impl StringPlace for [&str] {
     }
 }
 
-use crate::se_bagls::Label;
+use crate::bagls::se::Label;
 
 impl<'a> StringPlace for Label<'a> {
     fn compute_width(&self, _bold: bool) -> usize {

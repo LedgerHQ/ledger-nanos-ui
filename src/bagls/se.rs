@@ -117,6 +117,20 @@ impl<'a> Icon<'a> {
     }
 }
 
+use crate::bagls::RectFull;
+
+impl Draw for RectFull {
+    fn display(&self) {
+        nanos_sdk::screen::sdk_bagl_hal_draw_rect(1, self.pos.0, self.pos.1, self.width, self.height);
+        nanos_sdk::screen::sdk_screen_update();
+    }
+
+    fn erase(&self) {
+        nanos_sdk::screen::sdk_bagl_hal_draw_rect(0, self.pos.0, self.pos.1, self.width, self.height);
+        nanos_sdk::screen::sdk_screen_update();
+    }
+}
+
 extern "C" {
     fn bagl_hal_draw_bitmap_within_rect(
         x: i32,
