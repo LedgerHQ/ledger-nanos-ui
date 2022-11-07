@@ -1,10 +1,6 @@
 #![no_std]
 
-#[cfg(target_os = "nanos")]
 pub mod bagls;
-
-#[cfg(not(target_os = "nanos"))]
-pub mod se_bagls;
 
 #[cfg(not(target_os = "nanos"))]
 pub mod string_se;

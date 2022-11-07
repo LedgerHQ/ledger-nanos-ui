@@ -3,14 +3,10 @@
 use nanos_sdk::buttons::{get_button_event, ButtonEvent, ButtonsState};
 use nanos_sdk::*;
 
-#[cfg(target_os = "nanos")]
 use crate::bagls::*;
 
 use crate::layout;
 use crate::layout::{Draw, Location, StringPlace};
-
-#[cfg(not(target_os = "nanos"))]
-use crate::se_bagls::*;
 
 /// Handles communication to filter
 /// out actual events, and converts key
@@ -42,9 +38,8 @@ pub fn clear_screen() {
 
         #[cfg(feature = "speculos")]
         {
-            use crate::bitmaps;
             // Speculos does not emulate the screen_clear syscall yet
-            bitmaps::manual_screen_clear();
+            RectFull::new().width(crate::SCREEN_WIDTH as u32).height(crate::SCREEN_HEIGHT as u32).erase();
         }
     }
 
