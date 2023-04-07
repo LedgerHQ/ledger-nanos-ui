@@ -1,3 +1,4 @@
+use super::Icon;
 use crate::layout::{Draw, Layout, Location};
 use nanos_sdk::seph;
 use nanos_sdk::seph::SephTags;
@@ -12,21 +13,6 @@ pub enum BaglTypes {
     Icon = 5,
     Circle = 6,
     LabelLine = 7,
-}
-
-#[repr(u8)]
-/// All icons available on the Ledger Nano-S
-pub enum Icons {
-    Check = 6,
-    Cross,
-    CheckBadge,
-    Left,
-    Right,
-    Up,
-    Down,
-    CrossBadge = 14,
-    TransactionBadge = 24,
-    EyeBadge = 27,
 }
 
 pub const BAGL_FONT_ALIGNMENT_CENTER: u32 = 32768;
@@ -84,7 +70,7 @@ pub trait SendToDisplay {
 pub enum Bagl<'a> {
     LABELLINE(Label<'a>),
     RECT(Rect),
-    ICON(Icon),
+    ICON(Icon<'a>),
 }
 
 impl Bagl<'_> {
@@ -113,57 +99,15 @@ pub struct bagl_element_rs<'a> {
     pub text: Option<&'a str>,
 }
 
-pub struct Icon {
-    pub pos: (i16, i16),
-    pub dims: (u16, u16),
-    pub glyph_id: u8,
-}
-
-impl Icon {
-    pub const fn new(icon_id: Icons) -> Icon {
-        Icon {
-            pos: (12, 12),
-            dims: (8, 8),
-            glyph_id: icon_id as u8,
-        }
-    }
-    pub const fn icon(self, id: u8) -> Self {
-        Icon {
-            glyph_id: id,
-            ..self
-        }
-    }
-
-    pub const fn pos(self, x: i16, y: i16) -> Self {
-        Icon {
-            pos: (x, y),
-            ..self
-        }
-    }
-
-    pub const fn set_x(self, x: i16) -> Self {
-        Icon {
-            pos: (x, self.pos.1),
-            ..self
-        }
-    }
-
-    pub const fn dims(self, w: u16, h: u16) -> Self {
-        Icon {
-            dims: (w, h),
-            ..self
-        }
-    }
-}
-
-impl Draw for Icon {
+impl Draw for Icon<'_> {
     fn display(&self) {
         self.paint();
     }
     fn erase(&self) {
+        let icon = nanos_sdk::pic_rs(self.icon);
         Rect::new()
             .pos(self.pos.0, self.pos.1)
-            .dims(self.dims.0, self.dims.1)
+            .dims(icon.width as u16, icon.height as u16)
             .colors(0, 0xffffff)
             .fill(true)
             .paint();
@@ -319,7 +263,6 @@ impl Draw for Rect {
     }
 }
 
-
 impl Draw for RectFull {
     fn display(&self) {
         self.paint();
@@ -334,25 +277,47 @@ impl Draw for RectFull {
     }
 }
 
-impl SendToDisplay for Icon {
+impl SendToDisplay for Icon<'_> {
     fn paint(&self) {
         self.wait_for_status();
+        let icon = nanos_sdk::pic_rs(self.icon);
         let baglcomp = BaglComponent {
             type_: BaglTypes::Icon as u8,
             userid: 0,
             x: self.pos.0,
             y: self.pos.1,
-            width: self.dims.0,
-            height: self.dims.1,
+            width: icon.width as u16,
+            height: icon.height as u16,
             stroke: 0,
             radius: 0,
             fill: 0,
-            fgcolor: 0xffffffu32,
+            fgcolor: 0,
             bgcolor: 0,
             font_id: 0,
-            icon_id: self.glyph_id,
+            icon_id: 0,
         };
-        baglcomp.paint();
+        let bagl_comp = unsafe {
+            core::slice::from_raw_parts(
+                &baglcomp as *const BaglComponent as *const u8,
+                core::mem::size_of::<BaglComponent>(),
+            )
+        };
+        let lenbytes = ((bagl_comp.len() + 1 + (2 * 4) + icon.bitmap.len()) as u16).to_be_bytes();
+        seph::seph_send(&[
+            SephTags::ScreenDisplayStatus as u8,
+            lenbytes[0],
+            lenbytes[1],
+        ]);
+        seph::seph_send(bagl_comp);
+        // bpp (1), 'color_index' (2*4)
+        seph::seph_send(&[1, 0, 0, 0, 0, 0xff, 0xff, 0xff, 0]);
+        let bmp = unsafe {
+            core::slice::from_raw_parts(
+                nanos_sdk::bindings::pic(icon.bitmap.as_ptr() as *mut c_void) as *const u8,
+                icon.bitmap.len(),
+            )
+        };
+        seph::seph_send(bmp);
     }
 }
 
@@ -389,7 +354,7 @@ impl SendToDisplay for RectFull {
             x: self.pos.0 as i16,
             y: self.pos.1 as i16,
             width: self.width as u16,
-            height: self.height as u16, 
+            height: self.height as u16,
             stroke: 0,
             radius: 0,
             fill: 1,
@@ -464,15 +429,3 @@ pub const BLANK: Rect = Rect::new()
     .dims(128, 32)
     .colors(0, 0xffffff)
     .fill(true);
-
-pub const LEFT_ARROW: Icon = Icon::new(Icons::Left).pos(0, 12);
-pub const RIGHT_ARROW: Icon = Icon::new(Icons::Right).pos(120, 12);
-pub const LEFT_S_ARROW: Icon = Icon::new(Icons::Left).pos(4, 12);
-pub const RIGHT_S_ARROW: Icon = Icon::new(Icons::Right).pos(116, 12);
-pub const UP_ARROW: Icon = Icon::new(Icons::Up).pos(2, 12);
-pub const DOWN_ARROW: Icon = Icon::new(Icons::Down).pos(117, 12);
-pub const UP_S_ARROW: Icon = Icon::new(Icons::Up).pos(2, 8);
-pub const DOWN_S_ARROW: Icon = Icon::new(Icons::Down).pos(117, 8);
-
-pub const CHECKMARK_ICON: Icon = Icon::new(Icons::CheckBadge);
-pub const CROSS_ICON: Icon = Icon::new(Icons::CrossBadge);

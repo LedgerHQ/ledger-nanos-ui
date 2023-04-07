@@ -45,6 +45,7 @@ pub const BLANK: [u8; 1024] = [0u8; 1024];
 
 pub const BACK: Glyph = Glyph::from_include(include_gif!("icons/badge_back.gif"));
 pub const CHECKMARK: Glyph = Glyph::from_include(include_gif!("icons/badge_check.gif"));
+pub const COGGLE: Glyph = Glyph::from_include(include_gif!("icons/icon_coggle.gif"));
 pub const CROSS: Glyph = Glyph::from_include(include_gif!("icons/icon_cross_badge.gif"));
 pub const DOWN_ARROW: Glyph = Glyph::from_include(include_gif!("icons/icon_down.gif"));
 pub const LEFT_ARROW: Glyph = Glyph::from_include(include_gif!("icons/icon_left.gif"));
