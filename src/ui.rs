@@ -86,7 +86,7 @@ impl<'a> Validator<'a> {
         };
         redraw(&lines);
 
-        let mut response = true;
+        let mut response = false;
 
         loop {
             match get_event(&mut buttons) {
