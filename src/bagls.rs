@@ -57,7 +57,7 @@ impl<'a> From<&'a Glyph<'a>> for Icon<'a> {
 }
 
 impl<'a> Icon<'a> {
-    const fn from(glyph: &'a Glyph<'a>) -> Icon<'a> {
+    pub const fn from(glyph: &'a Glyph<'a>) -> Icon<'a> {
         Icon {
             icon: glyph,
             pos: (0, middle_y(glyph)),
