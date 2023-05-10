@@ -16,15 +16,18 @@ pub fn get_event(buttons: &mut ButtonsState) -> Option<ButtonEvent> {
         seph::send_general_status();
     }
 
-    // TODO: Receiving an APDU while in UX will lead to .. exit ?
+    let mut fake_buffer = [0u8; 16];
+    let mut spi_buffer = [0u8; 128];
     while seph::is_status_sent() {
-        seph::seph_recv(&mut buttons.cmd_buffer, 0);
-        let tag = buttons.cmd_buffer[0];
+        seph::seph_recv(&mut spi_buffer, 0);
+        let tag = spi_buffer[0];
 
         // button push event
         if tag == 0x05 {
-            let button_info = buttons.cmd_buffer[3] >> 1;
+            let button_info = spi_buffer[3] >> 1;
             return get_button_event(buttons, button_info);
+        } else {
+            seph::handle_event(&mut fake_buffer, &spi_buffer);
         }
     }
     None
