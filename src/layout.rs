@@ -3,6 +3,7 @@ pub enum Layout {
     LeftAligned,
     RightAligned,
     Centered,
+    Custom(usize),
 }
 
 impl Layout {
@@ -11,6 +12,7 @@ impl Layout {
             Layout::LeftAligned => crate::PADDING,
             Layout::Centered => (crate::SCREEN_WIDTH - width) / 2,
             Layout::RightAligned => crate::SCREEN_WIDTH - crate::PADDING - width,
+            Layout::Custom(x) => *x,
         }
     }
 }
