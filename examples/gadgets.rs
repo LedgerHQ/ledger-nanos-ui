@@ -107,7 +107,7 @@ extern "C" fn sample_main() {
     let checkmark = nanos_ui::bagls::CHECKMARK_ICON.set_x(0).set_y(4);
     checkmark.display();
     nanos_ui::bagls::CROSS_ICON.set_x(20).set_y(4).display();
-    nanos_ui::bagls::COGGLE.set_x(40).set_y(4).display();
+    nanos_ui::bagls::COGGLE_ICON.set_x(40).set_y(4).display();
     wait_any();
     checkmark.erase();
     wait_any();

@@ -115,13 +115,12 @@ pub const UP_S_ARROW: Icon = UP_ARROW.shift_v(-4);
 
 pub const CHECKMARK_ICON: Icon = Icon::from(&bitmaps::CHECKMARK);
 pub const CROSS_ICON: Icon = Icon::from(&bitmaps::CROSS);
-pub const COGGLE: Icon = Icon::from(&bitmaps::COGGLE);
-
-pub const ICON_CERTIFICATE: Icon = Icon::from(&mitmaps::CERTIFICATE);
-pub const ICON_CROSSMARK: Icon = Icon::from(&mitmaps::CROSSMARK);
-pub const ICON_DASHBOARD: Icon = Icon::from(&mitmaps::DASHBOARD);
-pub const ICON_DASHBOARD_X: Icon = Icon::from(&mitmaps::DASHBOARD_X);
-pub const ICON_EYE: Icon = Icon::from(&mitmaps::EYE);
-pub const ICON_PROCESSING: Icon = Icon::from(&mitmaps::PROCESSING);
-pub const ICON_VALIDATE_14: Icon = Icon::from(&mitmaps::VALIDATE_14);
-pub const ICON_WARNING: Icon = Icon::from(&mitmaps::WARNING);
+pub const COGGLE_ICON: Icon = Icon::from(&bitmaps::COGGLE);
+pub const CERTIFICATE_ICON: Icon = Icon::from(&mitmaps::CERTIFICATE);
+pub const CROSSMARK_ICON: Icon = Icon::from(&mitmaps::CROSSMARK);
+pub const DASHBOARD_ICON: Icon = Icon::from(&mitmaps::DASHBOARD);
+pub const DASHBOARD_X_ICON: Icon = Icon::from(&mitmaps::DASHBOARD_X);
+pub const EYE_ICON: Icon = Icon::from(&mitmaps::EYE);
+pub const PROCESSING_ICON: Icon = Icon::from(&mitmaps::PROCESSING);
+pub const VALIDATE_14_ICON: Icon = Icon::from(&mitmaps::VALIDATE_14);
+pub const WARNING_ICON: Icon = Icon::from(&mitmaps::WARNING);
