@@ -6,7 +6,7 @@ pub enum Layout {
 }
 
 impl Layout {
-    pub fn get_x(&self, width: usize) -> usize {
+    pub const fn get_x(&self, width: usize) -> usize {
         match self {
             Layout::LeftAligned => crate::PADDING,
             Layout::Centered => (crate::SCREEN_WIDTH - width) / 2,
@@ -24,7 +24,7 @@ pub enum Location {
 }
 
 impl Location {
-    pub fn get_y(&self, height: usize) -> usize {
+    pub const fn get_y(&self, height: usize) -> usize {
         match self {
             Location::Top => 0,
             Location::Middle => (crate::SCREEN_HEIGHT - height) / 2,
