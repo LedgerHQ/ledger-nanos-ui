@@ -378,12 +378,12 @@ impl<'a> SendToDisplay for Label<'a> {
             Font::OpenSansRegular11px
         };
         let x = match self.layout {
-            Layout::RightAligned => self.layout.get_x(self.text.len() * 7),
+            Layout::RightAligned | Layout::Custom(..) => self.layout.get_x(self.text.len() * 7),
             _ => 0,
         };
         let y = self.loc.get_y(self.dims.1 as usize) as i16;
         let width = match self.layout {
-            Layout::Centered => crate::SCREEN_WIDTH,
+            Layout::Centered | Layout::Custom(..) => crate::SCREEN_WIDTH,
             _ => self.text.len() * 6,
         };
         let baglcomp = BaglComponent {
