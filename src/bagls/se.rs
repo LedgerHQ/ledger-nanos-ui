@@ -108,7 +108,7 @@ extern "C" {
 use core::ffi::c_void;
 
 #[inline(never)]
-pub fn pic_draw(x: i32, y: i32, width: u32, height: u32, inverted: bool, bitmap: &[u8]) {
+fn pic_draw(x: i32, y: i32, width: u32, height: u32, inverted: bool, bitmap: &[u8]) {
     let inverted = [inverted as u32, !inverted as u32];
     unsafe {
         let pic_bmp = nanos_sdk::bindings::pic(bitmap.as_ptr() as *mut c_void);
