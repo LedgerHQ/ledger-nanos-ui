@@ -43,8 +43,8 @@ const fn middle_y(glyph: &Glyph) -> i16 {
 }
 
 pub struct Icon<'a> {
-    icon: &'a Glyph<'a>,
-    pos: (i16, i16),
+    pub icon: &'a Glyph<'a>,
+    pub pos: (i16, i16),
 }
 
 impl<'a> From<&'a Glyph<'a>> for Icon<'a> {
