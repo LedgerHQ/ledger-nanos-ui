@@ -43,8 +43,8 @@ const fn middle_y(glyph: &Glyph) -> i16 {
 }
 
 pub struct Icon<'a> {
-    icon: &'a Glyph<'a>,
-    pos: (i16, i16),
+    pub icon: &'a Glyph<'a>,
+    pub pos: (i16, i16),
 }
 
 impl<'a> From<&'a Glyph<'a>> for Icon<'a> {
@@ -115,4 +115,12 @@ pub const UP_S_ARROW: Icon = UP_ARROW.shift_v(-4);
 
 pub const CHECKMARK_ICON: Icon = Icon::from(&bitmaps::CHECKMARK);
 pub const CROSS_ICON: Icon = Icon::from(&bitmaps::CROSS);
-pub const COGGLE: Icon = Icon::from(&bitmaps::COGGLE);
+pub const COGGLE_ICON: Icon = Icon::from(&bitmaps::COGGLE);
+pub const CERTIFICATE_ICON: Icon = Icon::from(&bitmaps::CERTIFICATE);
+pub const CROSSMARK_ICON: Icon = Icon::from(&bitmaps::CROSSMARK);
+pub const DASHBOARD_ICON: Icon = Icon::from(&bitmaps::DASHBOARD);
+pub const DASHBOARD_X_ICON: Icon = Icon::from(&bitmaps::DASHBOARD_X);
+pub const EYE_ICON: Icon = Icon::from(&bitmaps::EYE);
+pub const PROCESSING_ICON: Icon = Icon::from(&bitmaps::PROCESSING);
+pub const VALIDATE_14_ICON: Icon = Icon::from(&bitmaps::VALIDATE_14);
+pub const WARNING_ICON: Icon = Icon::from(&bitmaps::WARNING);
