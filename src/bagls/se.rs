@@ -121,7 +121,7 @@ fn pic_draw(x: i32, y: i32, width: u32, height: u32, inverted: bool, bitmap: &[u
             inverted.as_ptr(),
             1,
             pic_bmp as *const u8,
-            (bitmap.len() * 8) as u32,
+            width * height,
         )
     }
 }
