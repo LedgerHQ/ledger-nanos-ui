@@ -79,7 +79,6 @@ impl Draw for RectFull {
             self.width,
             self.height,
         );
-        nanos_sdk::screen::sdk_screen_update();
     }
 
     fn erase(&self) {
@@ -90,7 +89,6 @@ impl Draw for RectFull {
             self.width,
             self.height,
         );
-        nanos_sdk::screen::sdk_screen_update();
     }
 }
 

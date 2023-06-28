@@ -58,6 +58,10 @@ pub trait Draw {
         self.display();
         crate::screen_util::screen_update();
     }
+    fn instant_erase(&self) {
+        self.erase();
+        crate::screen_util::screen_update();
+    }
     fn display(&self);
     fn erase(&self);
 }
