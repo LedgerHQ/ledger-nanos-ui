@@ -39,7 +39,10 @@ pub fn clear_screen() {
         #[cfg(feature = "speculos")]
         {
             // Speculos does not emulate the screen_clear syscall yet
-            RectFull::new().width(crate::SCREEN_WIDTH as u32).height(crate::SCREEN_HEIGHT as u32).erase();
+            RectFull::new()
+                .width(crate::SCREEN_WIDTH as u32)
+                .height(crate::SCREEN_HEIGHT as u32)
+                .erase();
         }
     }
 
@@ -368,6 +371,8 @@ impl<'a> MessageScroller<'a> {
             let chunk = &self.message[start..end];
             label.erase();
             label.text = &chunk;
+            LEFT_ARROW.erase();
+            RIGHT_ARROW.erase();
             if page > 0 {
                 LEFT_ARROW.display();
             }
