@@ -99,17 +99,34 @@ extern "C" fn sample_main() {
     use nanos_ui::bagls::RectFull as Rect;
     use nanos_ui::layout::Draw;
 
-    Rect::new().width(10).height(10).pos(16, 16).display();
-    Rect::new().width(10).height(10).pos(32, 16).display();
-    Rect::new().width(10).height(10).pos(48, 16).display();
+    Rect::new()
+        .width(10)
+        .height(10)
+        .pos(16, 16)
+        .instant_display();
+    Rect::new()
+        .width(10)
+        .height(10)
+        .pos(32, 16)
+        .instant_display();
+    Rect::new()
+        .width(10)
+        .height(10)
+        .pos(48, 16)
+        .instant_display();
     wait_any();
 
+    ui::clear_screen();
+
     let checkmark = nanos_ui::bagls::CHECKMARK_ICON.set_x(0).set_y(4);
-    checkmark.display();
-    nanos_ui::bagls::CROSS_ICON.set_x(20).set_y(4).display();
-    nanos_ui::bagls::COGGLE.set_x(40).set_y(4).display();
+    checkmark.instant_display();
+    nanos_ui::bagls::CROSS_ICON
+        .set_x(20)
+        .set_y(4)
+        .instant_display();
+    nanos_ui::bagls::COGGLE.set_x(40).set_y(4).instant_display();
     wait_any();
-    checkmark.erase();
+    checkmark.instant_erase();
     wait_any();
 
     nanos_sdk::exit_app(0);
