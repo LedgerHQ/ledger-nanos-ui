@@ -1,12 +1,11 @@
 #![allow(dead_code)]
 
-use nanos_sdk::buttons::{get_button_event, ButtonEvent, ButtonsState};
-use nanos_sdk::*;
+use ledger_sdk_sys::buttons::{get_button_event, ButtonEvent, ButtonsState};
+use ledger_sdk_sys::seph;
 
 use crate::bagls::*;
-
 use crate::layout;
-use crate::layout::{Draw, Location, StringPlace};
+use crate::layout::{Draw, Layout, Location, StringPlace};
 
 /// Handles communication to filter
 /// out actual events, and converts key
@@ -33,17 +32,7 @@ pub fn get_event(buttons: &mut ButtonsState) -> Option<ButtonEvent> {
 pub fn clear_screen() {
     #[cfg(not(target_os = "nanos"))]
     {
-        #[cfg(not(feature = "speculos"))]
-        nanos_sdk::screen::sdk_screen_clear();
-
-        #[cfg(feature = "speculos")]
-        {
-            // Speculos does not emulate the screen_clear syscall yet
-            RectFull::new()
-                .width(crate::SCREEN_WIDTH as u32)
-                .height(crate::SCREEN_HEIGHT as u32)
-                .erase();
-        }
+        crate::screen_util::screen_clear();
     }
 
     #[cfg(target_os = "nanos")]
@@ -139,8 +128,6 @@ pub struct MessageValidator<'a> {
     /// 2 elements: icon and two lines of text displayed.
     cancel: &'a [&'a str],
 }
-
-use crate::layout::*;
 
 impl<'a> MessageValidator<'a> {
     pub const fn new(

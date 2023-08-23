@@ -2,11 +2,7 @@ use crate::fonts::OPEN_SANS;
 use crate::layout::*;
 use crate::screen_util::{draw, screen_update};
 use core::ffi::c_void;
-use nanos_sdk::pic_rs;
-
-extern "C" {
-    fn pic(link_address: *mut c_void) -> *mut c_void;
-}
+use ledger_sdk_sys::{pic, pic_rs};
 
 impl StringPlace for &str {
     fn compute_width(&self, bold: bool) -> usize {
@@ -18,7 +14,7 @@ impl StringPlace for &str {
 
     fn place(&self, loc: Location, layout: Layout, bold: bool) {
         let total_width = self.compute_width(bold);
-        let mut cur_x = layout.get_x(total_width as usize) as i32;
+        let mut cur_x = layout.get_x(total_width) as i32;
 
         let font_choice = bold as usize;
         for c in self.as_bytes().iter().map(pic_rs) {
