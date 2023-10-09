@@ -153,7 +153,7 @@ impl<'a> Label<'a> {
         }
     }
 
-    pub const fn from_const(text: &'static str) -> Self {
+    pub const fn from_const(text: &'a str) -> Self {
         Label {
             loc: Location::Middle,
             layout: Layout::Centered,
@@ -178,7 +178,7 @@ impl<'a> Label<'a> {
     pub const fn bold(self) -> Self {
         Label { bold: true, ..self }
     }
-    pub fn text(self, text: &'a str) -> Self {
+    pub const fn text(self, text: &'a str) -> Self {
         Label { text, ..self }
     }
 }
