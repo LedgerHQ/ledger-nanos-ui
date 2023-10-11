@@ -5,14 +5,11 @@ authors = ["yhql"]
 edition = "2021"
 
 [dependencies]
-nanos_sdk = { git = "https://github.com/LedgerHQ/ledger-nanos-sdk" } 
+ledger-sdk-sys = { git = "https://github.com/LedgerHQ/secure-sdk-rust" }
 include_gif = { git = "https://github.com/LedgerHQ/sdk_include_gif" }
 
-[features]
-speculos = ["nanos_sdk/speculos"]
-
 # This section is not necessary to build the package
-# it is only used to be able to do 
+# it is only used to be able to do
 # `cargo ledger build nanos -- --example gadgets`
 [package.metadata.nanos]
 curve = ["secp256k1"]

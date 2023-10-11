@@ -7,7 +7,7 @@ fn panic(_: &PanicInfo) -> ! {
     loop {}
 }
 
-use nanos_sdk::buttons::*;
+use ledger_sdk_sys::buttons::*;
 use nanos_ui::layout::{Layout, Location, StringPlace};
 use nanos_ui::ui;
 
@@ -129,5 +129,5 @@ extern "C" fn sample_main() {
     checkmark.instant_erase();
     wait_any();
 
-    nanos_sdk::exit_app(0);
+    ledger_sdk_sys::exit_app(0);
 }

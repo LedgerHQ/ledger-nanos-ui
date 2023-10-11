@@ -1,4 +1,4 @@
-use crate::screen_util::draw;
+use crate::screen_util;
 
 pub struct Glyph<'a> {
     pub bitmap: &'a [u8],
@@ -31,12 +31,12 @@ impl<'a> Glyph<'a> {
         }
     }
     pub fn draw(&self, x: i32, y: i32) {
-        draw(x, y, self.width, self.height, self.inverted, &self.bitmap);
+        screen_util::draw(x, y, self.width, self.height, self.inverted, &self.bitmap);
     }
 }
 
 pub fn manual_screen_clear() {
-    nanos_sdk::screen::sdk_bagl_hal_draw_bitmap_within_rect(0, 0, 128, 64, false, &BLANK);
+    screen_util::bagl_hal_draw_bitmap_within_rect(0, 0, 128, 64, false, &BLANK);
 }
 
 use include_gif::include_gif;
