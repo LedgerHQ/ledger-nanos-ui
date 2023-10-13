@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use nanos_sdk::buttons::{get_button_event, ButtonEvent, ButtonsState};
+use nanos_sdk::buttons::ButtonEvent;
 use nanos_sdk::*;
 
 use crate::bagls::*;
@@ -11,23 +11,11 @@ use crate::layout::{Draw, Location, StringPlace};
 /// Handles communication to filter
 /// out actual events, and converts key
 /// events into presses/releases
-pub fn get_event(buttons: &mut ButtonsState) -> Option<ButtonEvent> {
-    if !seph::is_status_sent() {
-        seph::send_general_status();
+pub fn get_event(comm: &mut io::Comm) -> Option<ButtonEvent> {
+    match comm.next_event::<io::ApduHeader>() {
+        io::Event::Button(e) => Some(e),
+        _ => None,
     }
-
-    // TODO: Receiving an APDU while in UX will lead to .. exit ?
-    while seph::is_status_sent() {
-        seph::seph_recv(&mut buttons.cmd_buffer, 0);
-        let tag = buttons.cmd_buffer[0];
-
-        // button push event
-        if tag == 0x05 {
-            let button_info = buttons.cmd_buffer[3] >> 1;
-            return get_button_event(buttons, button_info);
-        }
-    }
-    None
 }
 
 pub fn clear_screen() {
@@ -72,7 +60,6 @@ impl<'a> Validator<'a> {
 
     pub fn ask(&self) -> bool {
         clear_screen();
-        let mut buttons = ButtonsState::new();
 
         let mut lines = [Label::from_const("Cancel"), Label::from(self.message)];
 
@@ -90,9 +77,10 @@ impl<'a> Validator<'a> {
         redraw(&lines);
 
         let mut response = false;
+        let mut comm = io::Comm::new();
 
         loop {
-            match get_event(&mut buttons) {
+            match get_event(&mut comm) {
                 Some(ButtonEvent::LeftButtonPress) => {
                     UP_S_ARROW.instant_display();
                 }
@@ -197,9 +185,9 @@ impl<'a> MessageValidator<'a> {
 
         draw(cur_page);
 
-        let mut buttons = ButtonsState::new();
+        let mut comm = io::Comm::new();
         loop {
-            match get_event(&mut buttons) {
+            match get_event(&mut comm) {
                 Some(ButtonEvent::LeftButtonPress) => {
                     LEFT_S_ARROW.instant_display();
                 }
@@ -247,7 +235,6 @@ impl<'a> Menu<'a> {
 
     pub fn show(&self) -> usize {
         clear_screen();
-        let mut buttons = ButtonsState::new();
 
         let mut items: [Label; layout::MAX_LINES] =
             core::array::from_fn(|i| Label::from(*self.panels.get(i).unwrap_or(&"")));
@@ -261,9 +248,10 @@ impl<'a> Menu<'a> {
         crate::screen_util::screen_update();
 
         let mut index = 0;
+        let mut comm = io::Comm::new();
 
         loop {
-            match get_event(&mut buttons) {
+            match get_event(&mut comm) {
                 Some(ButtonEvent::LeftButtonPress) => {
                     UP_S_ARROW.instant_display();
                 }
@@ -323,12 +311,11 @@ impl<'a> SingleMessage<'a> {
     /// Display the message and wait
     /// for any kind of button release
     pub fn show_and_wait(&self) {
-        let mut buttons = ButtonsState::new();
-
         self.show();
 
+        let mut comm = io::Comm::new();
         loop {
-            match get_event(&mut buttons) {
+            match get_event(&mut comm) {
                 Some(ButtonEvent::LeftButtonRelease)
                 | Some(ButtonEvent::RightButtonRelease)
                 | Some(ButtonEvent::BothButtonsRelease) => return,
@@ -354,7 +341,6 @@ impl<'a> MessageScroller<'a> {
 
     pub fn event_loop(&self) {
         clear_screen();
-        let mut buttons = ButtonsState::new();
         const CHAR_N: usize = 16;
         let page_count = (self.message.len() - 1) / CHAR_N + 1;
         if page_count == 0 {
@@ -384,8 +370,10 @@ impl<'a> MessageScroller<'a> {
 
         draw(cur_page);
 
+        let mut comm = io::Comm::new();
+
         loop {
-            match get_event(&mut buttons) {
+            match get_event(&mut comm) {
                 Some(ButtonEvent::LeftButtonPress) => {
                     LEFT_S_ARROW.instant_display();
                 }
