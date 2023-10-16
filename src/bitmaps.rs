@@ -1,4 +1,5 @@
 use crate::screen_util::draw;
+use ledger_sdk_sys;
 
 pub struct Glyph<'a> {
     pub bitmap: &'a [u8],
@@ -36,7 +37,20 @@ impl<'a> Glyph<'a> {
 }
 
 pub fn manual_screen_clear() {
-    nanos_sdk::screen::sdk_bagl_hal_draw_bitmap_within_rect(0, 0, 128, 64, false, &BLANK);
+    let inverted = [0u32, 1u32];
+    unsafe {
+        ledger_sdk_sys::bagl_hal_draw_bitmap_within_rect(
+            0, 
+            0, 
+            128, 
+            64, 
+            2, 
+            inverted.as_ptr(), 
+            1, 
+            BLANK.as_ptr(), 
+            128 * 64
+        );
+    }
 }
 
 use include_gif::include_gif;

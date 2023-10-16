@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 
-use nanos_sdk::buttons::{get_button_event, ButtonEvent, ButtonsState};
-use nanos_sdk::*;
+use ledger_sdk_sys::{seph, buttons::{get_button_event, ButtonEvent, ButtonsState}};
 
 use crate::bagls::*;
 
@@ -33,8 +32,11 @@ pub fn get_event(buttons: &mut ButtonsState) -> Option<ButtonEvent> {
 pub fn clear_screen() {
     #[cfg(not(target_os = "nanos"))]
     {
+
         #[cfg(not(feature = "speculos"))]
-        nanos_sdk::screen::sdk_screen_clear();
+        unsafe {
+            ledger_sdk_sys::screen_clear();
+        }
 
         #[cfg(feature = "speculos")]
         {

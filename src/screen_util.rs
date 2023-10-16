@@ -1,9 +1,21 @@
 #![allow(dead_code)]
 
-use nanos_sdk::screen;
+use ledger_sdk_sys;
 
 pub fn draw(x_pos: i32, y_pos: i32, w: u32, h: u32, inv: bool, bmp: &[u8]) {
-    screen::sdk_bagl_hal_draw_bitmap_within_rect(x_pos, y_pos, w, h, inv, bmp);
+    let inverted = [inv as u32, !inv as u32];
+    unsafe {
+        ledger_sdk_sys::bagl_hal_draw_bitmap_within_rect(
+            x_pos, 
+            y_pos, 
+            w, 
+            h, 
+            2, 
+            inverted.as_ptr(), 
+            1, 
+            bmp.as_ptr(), 
+            w * h);
+    }
 }
 
 pub fn fulldraw(x_pos: i32, y_pos: i32, bmp: &[u8]) {
@@ -12,11 +24,13 @@ pub fn fulldraw(x_pos: i32, y_pos: i32, bmp: &[u8]) {
 
 pub fn screen_update() {
     #[cfg(not(target_os = "nanos"))]
-    nanos_sdk::screen::sdk_screen_update();
+    unsafe {
+        ledger_sdk_sys::screen_update();
+    }
 }
 
 #[cfg(not(feature = "speculos"))]
 pub fn seph_setup_ticker(interval_ms: u16) {
     let ms = interval_ms.to_be_bytes();
-    nanos_sdk::seph::seph_send(&[0x4e, 0, 2, ms[0], ms[1]]);
+    ledger_sdk_sys::seph::seph_send(&[0x4e, 0, 2, ms[0], ms[1]]);
 }

@@ -1,7 +1,7 @@
 use super::Icon;
 use crate::layout::{Draw, Layout, Location};
-use nanos_sdk::seph;
-use nanos_sdk::seph::SephTags;
+use ledger_sdk_sys;
+use ledger_sdk_sys::seph::SephTags;
 
 #[repr(u8)]
 pub enum BaglTypes {
@@ -43,21 +43,21 @@ impl BaglComponent {
             )
         };
 
-        seph::seph_send(&[
+        ledger_sdk_sys::seph::seph_send(&[
             SephTags::ScreenDisplayStatus as u8,
             0,
             bagl_comp.len() as u8,
         ]);
-        seph::seph_send(bagl_comp);
+        ledger_sdk_sys::seph::seph_send(bagl_comp);
     }
 }
 
 pub trait SendToDisplay {
     fn wait_for_status(&self) {
-        if seph::is_status_sent() {
+        if ledger_sdk_sys::seph::is_status_sent() {
             // TODO: this does not seem like the right way to fix the problem...
             let mut spi_buffer = [0u8; 16];
-            seph::seph_recv(&mut spi_buffer, 0);
+            ledger_sdk_sys::seph::seph_recv(&mut spi_buffer, 0);
         }
     }
     fn paint(&self);
@@ -104,7 +104,7 @@ impl Draw for Icon<'_> {
         self.paint();
     }
     fn erase(&self) {
-        let icon = nanos_sdk::pic_rs(self.icon);
+        let icon = ledger_sdk_sys::pic_rs(self.icon);
         Rect::new()
             .pos(self.pos.0, self.pos.1)
             .dims(icon.width as u16, icon.height as u16)
@@ -280,7 +280,7 @@ impl Draw for RectFull {
 impl SendToDisplay for Icon<'_> {
     fn paint(&self) {
         self.wait_for_status();
-        let icon = nanos_sdk::pic_rs(self.icon);
+        let icon = ledger_sdk_sys::pic_rs(self.icon);
         let baglcomp = BaglComponent {
             type_: BaglTypes::Icon as u8,
             userid: 0,
@@ -303,21 +303,21 @@ impl SendToDisplay for Icon<'_> {
             )
         };
         let lenbytes = ((bagl_comp.len() + 1 + (2 * 4) + icon.bitmap.len()) as u16).to_be_bytes();
-        seph::seph_send(&[
+        ledger_sdk_sys::seph::seph_send(&[
             SephTags::ScreenDisplayStatus as u8,
             lenbytes[0],
             lenbytes[1],
         ]);
-        seph::seph_send(bagl_comp);
+        ledger_sdk_sys::seph::seph_send(bagl_comp);
         // bpp (1), 'color_index' (2*4)
-        seph::seph_send(&[1, 0, 0, 0, 0, 0xff, 0xff, 0xff, 0]);
+        ledger_sdk_sys::seph::seph_send(&[1, 0, 0, 0, 0, 0xff, 0xff, 0xff, 0]);
         let bmp = unsafe {
             core::slice::from_raw_parts(
-                nanos_sdk::bindings::pic(icon.bitmap.as_ptr() as *mut c_void) as *const u8,
+                ledger_sdk_sys::pic(icon.bitmap.as_ptr() as *mut c_void) as *const u8,
                 icon.bitmap.len(),
             )
         };
-        seph::seph_send(bmp);
+        ledger_sdk_sys::seph::seph_send(bmp);
     }
 }
 
@@ -409,16 +409,16 @@ impl<'a> SendToDisplay for Label<'a> {
             )
         };
         let lenbytes = ((bagl_comp.len() + self.text.len()) as u16).to_be_bytes();
-        seph::seph_send(&[
+        ledger_sdk_sys::seph::seph_send(&[
             SephTags::ScreenDisplayStatus as u8,
             lenbytes[0],
             lenbytes[1],
         ]);
-        seph::seph_send(bagl_comp);
+        ledger_sdk_sys::seph::seph_send(bagl_comp);
 
         unsafe {
-            let pic_text = nanos_sdk::bindings::pic(self.text.as_ptr() as *mut u8 as *mut c_void);
-            nanos_sdk::bindings::io_seph_send(pic_text as *mut u8, self.text.len() as u16);
+            let pic_text = ledger_sdk_sys::pic(self.text.as_ptr() as *mut u8 as *mut c_void);
+            ledger_sdk_sys::io_seph_send(pic_text as *mut u8, self.text.len() as u16);
         }
     }
 }
