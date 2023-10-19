@@ -1,6 +1,7 @@
 use super::Icon;
 use crate::fonts::OPEN_SANS;
 use crate::layout::*;
+use ledger_sdk_sys;
 
 pub struct Label<'a> {
     pub text: &'a str,
@@ -72,47 +73,39 @@ use crate::bagls::RectFull;
 
 impl Draw for RectFull {
     fn display(&self) {
-        nanos_sdk::screen::sdk_bagl_hal_draw_rect(
-            1,
-            self.pos.0,
-            self.pos.1,
-            self.width,
-            self.height,
-        );
+        unsafe { 
+            ledger_sdk_sys::bagl_hal_draw_rect(
+                1,
+                self.pos.0,
+                self.pos.1,
+                self.width,
+                self.height,
+            );
+        }
     }
 
     fn erase(&self) {
-        nanos_sdk::screen::sdk_bagl_hal_draw_rect(
-            0,
-            self.pos.0,
-            self.pos.1,
-            self.width,
-            self.height,
-        );
+        unsafe {
+            ledger_sdk_sys::bagl_hal_draw_rect(
+                0,
+                self.pos.0,
+                self.pos.1,
+                self.width,
+                self.height,
+            );
+        }
     }
 }
 
-extern "C" {
-    fn bagl_hal_draw_bitmap_within_rect(
-        x: i32,
-        y: i32,
-        width: u32,
-        height: u32,
-        color_count: u32,
-        colors: *const u32,
-        bit_per_pixel: u32,
-        bitmap: *const u8,
-        bitmap_length_bits: u32,
-    );
-}
+
 use core::ffi::c_void;
 
 #[inline(never)]
 fn pic_draw(x: i32, y: i32, width: u32, height: u32, inverted: bool, bitmap: &[u8]) {
     let inverted = [inverted as u32, !inverted as u32];
     unsafe {
-        let pic_bmp = nanos_sdk::bindings::pic(bitmap.as_ptr() as *mut c_void);
-        bagl_hal_draw_bitmap_within_rect(
+        let pic_bmp = ledger_sdk_sys::pic(bitmap.as_ptr() as *mut c_void);
+        ledger_sdk_sys::bagl_hal_draw_bitmap_within_rect(
             x,
             y,
             width,
@@ -128,7 +121,7 @@ fn pic_draw(x: i32, y: i32, width: u32, height: u32, inverted: bool, bitmap: &[u
 
 impl<'a> Draw for Icon<'a> {
     fn display(&self) {
-        let icon = nanos_sdk::pic_rs(self.icon);
+        let icon = ledger_sdk_sys::pic_rs(self.icon);
         pic_draw(
             self.pos.0 as i32,
             self.pos.1 as i32,
@@ -140,7 +133,7 @@ impl<'a> Draw for Icon<'a> {
     }
 
     fn erase(&self) {
-        let icon = nanos_sdk::pic_rs(self.icon);
+        let icon = ledger_sdk_sys::pic_rs(self.icon);
         pic_draw(
             self.pos.0 as i32,
             self.pos.1 as i32,
