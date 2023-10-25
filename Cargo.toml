@@ -6,6 +6,7 @@ edition = "2021"
 
 [dependencies]
 ledger-sdk-sys = { git = "https://github.com/LedgerHQ/secure-sdk-rust" }
+nanos_sdk = { git = "https://github.com/LedgerHQ/ledger-nanos-sdk.git" }
 include_gif = { git = "https://github.com/LedgerHQ/sdk_include_gif" }
 
 [features]
