@@ -322,8 +322,8 @@ impl<'a> Menu<'a> {
 pub enum PageStyle {
     PictureNormal, // Picture (should be 16x16) with two lines of text (page layout depends on device).
     PictureBold,   // Icon on top with one line of text on the bottom.
-    BoldNormal,    // One line of bold text and one line of normal text.
-    Normal,        // 2 lines of centered text.
+    BoldNormal, // One line of bold text and one line of normal text on Nano S or up to 3 lines on Nano X/SP.
+    Normal,     // 2 lines of centered text.
 }
 
 #[derive(Copy, Clone)]
@@ -420,15 +420,14 @@ impl<'a> Page<'a> {
             PageStyle::BoldNormal => {
                 let padding = 1;
                 let mut max_text_lines = 3;
-                if cfg!(target_os = "nanos")
-                {
+                if cfg!(target_os = "nanos") {
                     max_text_lines = 1;
                 }
-                let total_height = (OPEN_SANS[0].height * max_text_lines)  as usize
+                let total_height = (OPEN_SANS[0].height * max_text_lines) as usize
                     + OPEN_SANS[1].height as usize
                     + 2 * padding as usize;
                 let mut cur_y = Location::Middle.get_y(total_height);
-                
+
                 // Display the chunk count and index if needed
                 if self.chunk_count > 1 {
                     let mut label_bytes = [0u8; MAX_CHAR_PER_LINE];
@@ -450,16 +449,18 @@ impl<'a> Page<'a> {
                         ],
                         &mut label_bytes,
                     );
-                    from_utf8(&mut label_bytes).unwrap().trim_matches(char::from(0)).place(Location::Custom(cur_y), Layout::Centered, true);
+                    from_utf8(&mut label_bytes)
+                        .unwrap()
+                        .trim_end_matches(char::from(0))
+                        .place(Location::Custom(cur_y), Layout::Centered, true);
                 } else {
                     self.label[0].place(Location::Custom(cur_y), Layout::Centered, true);
                 }
                 cur_y += OPEN_SANS[0].height as usize + 2 * padding as usize;
-                
+
                 // If the device is a Nano S, display the second label as
                 // a single line of text
-                if cfg!(target_os = "nanos")
-                {
+                if cfg!(target_os = "nanos") {
                     self.label[1].place(Location::Custom(cur_y), Layout::Centered, false);
                 }
                 // Otherwise, display the second label as up to 3 lines of text
@@ -473,9 +474,12 @@ impl<'a> Page<'a> {
                         }
                         let end = (start + MAX_CHAR_PER_LINE).min(len);
                         indices[i] = (start, end);
-                        (&self.label[1][start..end]).place(Location::Custom(cur_y), Layout::Centered, false);
+                        (&self.label[1][start..end]).place(
+                            Location::Custom(cur_y),
+                            Layout::Centered,
+                            false,
+                        );
                         cur_y += OPEN_SANS[0].height as usize + 2 * padding as usize;
-                        
                     }
                 }
             }
@@ -730,7 +734,7 @@ impl<'a> MultiFieldReview<'a> {
 
     pub fn show(&self) -> bool {
         testing::debug_print("Show review 1\n");
-        
+
         let mut buttons = ButtonsState::new();
 
         let first_page = match self.review_message.len() {
@@ -757,7 +761,8 @@ impl<'a> MultiFieldReview<'a> {
             [self.cancel_message, ""],
             self.cancel_glyph,
         );
-        let mut review_pages: [Page; MAX_REVIEW_PAGES] = [Page::new(PageStyle::Normal, ["", ""], None); MAX_REVIEW_PAGES];
+        let mut review_pages: [Page; MAX_REVIEW_PAGES] =
+            [Page::new(PageStyle::Normal, ["", ""], None); MAX_REVIEW_PAGES];
         let mut total_page_count = 0;
 
         let mut max_chars_per_page = MAX_CHAR_PER_LINE * 3;
@@ -774,8 +779,9 @@ impl<'a> MultiFieldReview<'a> {
                 let start = i * max_chars_per_page;
                 let end = (start + max_chars_per_page).min(field.value.len());
                 let chunk = &field.value[start..end];
-                
-                review_pages[total_page_count] = Page::new(PageStyle::BoldNormal, [field.name, chunk], None);
+
+                review_pages[total_page_count] =
+                    Page::new(PageStyle::BoldNormal, [field.name, chunk], None);
                 review_pages[total_page_count].chunk_count = field_page_count as u8;
                 review_pages[total_page_count].chunk_idx = (i + 1) as u8;
                 // Check if we have reached the maximum number of pages
@@ -799,7 +805,7 @@ impl<'a> MultiFieldReview<'a> {
         RIGHT_ARROW.display();
 
         let mut cur_page = 0;
-        let mut refresh : bool = true;
+        let mut refresh: bool = true;
         review_pages[cur_page].place();
 
         loop {
@@ -829,8 +835,7 @@ impl<'a> MultiFieldReview<'a> {
                         }
                         _ => refresh = false,
                     }
-                    if refresh
-                    {
+                    if refresh {
                         clear_screen();
                         review_pages[cur_page].place();
                         if cur_page > 0 {
